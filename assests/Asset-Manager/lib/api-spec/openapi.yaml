@@ -1,0 +1,955 @@
+openapi: 3.1.0
+info:
+  title: Api
+  version: 0.1.0
+  description: Indrayani Mahavidyalaya College Website API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: courses
+    description: Academic courses
+  - name: faculty
+    description: Faculty members
+  - name: admissions
+    description: Admission inquiries/leads
+  - name: news
+    description: News and announcements
+  - name: media
+    description: Media gallery
+  - name: placements
+    description: Placement records
+  - name: contact
+    description: Contact form submissions
+  - name: admin
+    description: Admin authentication
+  - name: stats
+    description: Dashboard statistics
+
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  # ─── COURSES ─────────────────────────────────────────────────────────────────
+  /courses:
+    get:
+      operationId: getCourses
+      tags: [courses]
+      summary: List all courses
+      parameters:
+        - name: department
+          in: query
+          schema:
+            type: string
+        - name: type
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of courses
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Course"
+    post:
+      operationId: createCourse
+      tags: [courses]
+      summary: Create a course
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CourseInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Course"
+
+  /courses/{id}:
+    get:
+      operationId: getCourse
+      tags: [courses]
+      summary: Get a course by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Course
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Course"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateCourse
+      tags: [courses]
+      summary: Update a course
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CourseUpdate"
+      responses:
+        "200":
+          description: Updated course
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Course"
+    delete:
+      operationId: deleteCourse
+      tags: [courses]
+      summary: Delete a course
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # ─── FACULTY ─────────────────────────────────────────────────────────────────
+  /faculty:
+    get:
+      operationId: getFaculty
+      tags: [faculty]
+      summary: List all faculty members
+      parameters:
+        - name: department
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of faculty
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FacultyMember"
+    post:
+      operationId: createFacultyMember
+      tags: [faculty]
+      summary: Create a faculty member
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FacultyInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FacultyMember"
+
+  /faculty/{id}:
+    get:
+      operationId: getFacultyMember
+      tags: [faculty]
+      summary: Get a faculty member
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Faculty member
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FacultyMember"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateFacultyMember
+      tags: [faculty]
+      summary: Update a faculty member
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FacultyUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FacultyMember"
+    delete:
+      operationId: deleteFacultyMember
+      tags: [faculty]
+      summary: Delete a faculty member
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # ─── ADMISSIONS ──────────────────────────────────────────────────────────────
+  /admissions:
+    get:
+      operationId: getAdmissionLeads
+      tags: [admissions]
+      summary: List all admission inquiry leads
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of leads
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdmissionLead"
+    post:
+      operationId: createAdmissionLead
+      tags: [admissions]
+      summary: Submit an admission inquiry
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdmissionLeadInput"
+      responses:
+        "201":
+          description: Submitted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdmissionLead"
+
+  /admissions/{id}:
+    patch:
+      operationId: updateAdmissionLead
+      tags: [admissions]
+      summary: Update admission lead status
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdmissionLeadUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdmissionLead"
+
+  # ─── NEWS ────────────────────────────────────────────────────────────────────
+  /news:
+    get:
+      operationId: getNews
+      tags: [news]
+      summary: List all news and announcements
+      parameters:
+        - name: category
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of news items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/NewsItem"
+    post:
+      operationId: createNewsItem
+      tags: [news]
+      summary: Create a news item
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NewsInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NewsItem"
+
+  /news/{id}:
+    get:
+      operationId: getNewsItem
+      tags: [news]
+      summary: Get a news item
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: News item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NewsItem"
+    patch:
+      operationId: updateNewsItem
+      tags: [news]
+      summary: Update a news item
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NewsUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NewsItem"
+    delete:
+      operationId: deleteNewsItem
+      tags: [news]
+      summary: Delete a news item
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # ─── MEDIA ───────────────────────────────────────────────────────────────────
+  /media:
+    get:
+      operationId: getMediaItems
+      tags: [media]
+      summary: List all media gallery items
+      parameters:
+        - name: category
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of media
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MediaItem"
+    post:
+      operationId: createMediaItem
+      tags: [media]
+      summary: Add a media item
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MediaInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MediaItem"
+
+  /media/{id}:
+    delete:
+      operationId: deleteMediaItem
+      tags: [media]
+      summary: Delete a media item
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # ─── PLACEMENTS ──────────────────────────────────────────────────────────────
+  /placements:
+    get:
+      operationId: getPlacements
+      tags: [placements]
+      summary: List all placement records
+      parameters:
+        - name: year
+          in: query
+          schema:
+            type: integer
+        - name: department
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of placements
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Placement"
+    post:
+      operationId: createPlacement
+      tags: [placements]
+      summary: Add a placement record
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PlacementInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Placement"
+
+  /placements/{id}:
+    patch:
+      operationId: updatePlacement
+      tags: [placements]
+      summary: Update a placement record
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PlacementUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Placement"
+    delete:
+      operationId: deletePlacement
+      tags: [placements]
+      summary: Delete a placement record
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # ─── CONTACT ─────────────────────────────────────────────────────────────────
+  /contact:
+    post:
+      operationId: submitContact
+      tags: [contact]
+      summary: Submit a contact form
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContactInput"
+      responses:
+        "201":
+          description: Submitted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContactSubmission"
+
+  /contact/submissions:
+    get:
+      operationId: getContactSubmissions
+      tags: [contact]
+      summary: List all contact form submissions
+      responses:
+        "200":
+          description: List of submissions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ContactSubmission"
+
+  # ─── ADMIN AUTH ──────────────────────────────────────────────────────────────
+  /admin/login:
+    post:
+      operationId: adminLogin
+      tags: [admin]
+      summary: Admin login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminCredentials"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminSession"
+        "401":
+          description: Invalid credentials
+
+  /admin/logout:
+    post:
+      operationId: adminLogout
+      tags: [admin]
+      summary: Admin logout
+      responses:
+        "200":
+          description: Logged out
+
+  /admin/me:
+    get:
+      operationId: getAdminMe
+      tags: [admin]
+      summary: Get current admin session
+      responses:
+        "200":
+          description: Current session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminSession"
+        "401":
+          description: Not authenticated
+
+  # ─── STATS (wow endpoints) ────────────────────────────────────────────────────
+  /stats/dashboard:
+    get:
+      operationId: getDashboardStats
+      tags: [stats]
+      summary: Get dashboard summary statistics
+      responses:
+        "200":
+          description: Dashboard stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardStats"
+
+  /stats/placements:
+    get:
+      operationId: getPlacementStats
+      tags: [stats]
+      summary: Get aggregated placement statistics
+      responses:
+        "200":
+          description: Placement stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlacementStats"
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required: [status]
+
+    # ─── COURSES ───────────────────────────────────────────────────────────────
+    Course:
+      type: object
+      required: [id, name, department, type, duration, seats, createdAt]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        department: { type: string }
+        type: { type: string, description: "UG or PG" }
+        duration: { type: string }
+        seats: { type: integer }
+        description: { type: ["string", "null"] }
+        eligibility: { type: ["string", "null"] }
+        fees: { type: ["string", "null"] }
+        imageUrl: { type: ["string", "null"] }
+        isActive: { type: boolean }
+        createdAt: { type: string }
+
+    CourseInput:
+      type: object
+      required: [name, department, type, duration, seats]
+      properties:
+        name: { type: string }
+        department: { type: string }
+        type: { type: string }
+        duration: { type: string }
+        seats: { type: integer }
+        description: { type: string }
+        eligibility: { type: string }
+        fees: { type: string }
+        imageUrl: { type: string }
+        isActive: { type: boolean }
+
+    CourseUpdate:
+      type: object
+      properties:
+        name: { type: string }
+        department: { type: string }
+        type: { type: string }
+        duration: { type: string }
+        seats: { type: integer }
+        description: { type: string }
+        eligibility: { type: string }
+        fees: { type: string }
+        imageUrl: { type: string }
+        isActive: { type: boolean }
+
+    # ─── FACULTY ───────────────────────────────────────────────────────────────
+    FacultyMember:
+      type: object
+      required: [id, name, department, designation, createdAt]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        department: { type: string }
+        designation: { type: string }
+        qualification: { type: ["string", "null"] }
+        specialization: { type: ["string", "null"] }
+        experience: { type: ["integer", "null"] }
+        email: { type: ["string", "null"] }
+        phone: { type: ["string", "null"] }
+        photoUrl: { type: ["string", "null"] }
+        bio: { type: ["string", "null"] }
+        isHOD: { type: boolean }
+        createdAt: { type: string }
+
+    FacultyInput:
+      type: object
+      required: [name, department, designation]
+      properties:
+        name: { type: string }
+        department: { type: string }
+        designation: { type: string }
+        qualification: { type: string }
+        specialization: { type: string }
+        experience: { type: integer }
+        email: { type: string }
+        phone: { type: string }
+        photoUrl: { type: string }
+        bio: { type: string }
+        isHOD: { type: boolean }
+
+    FacultyUpdate:
+      type: object
+      properties:
+        name: { type: string }
+        department: { type: string }
+        designation: { type: string }
+        qualification: { type: string }
+        specialization: { type: string }
+        experience: { type: integer }
+        email: { type: string }
+        phone: { type: string }
+        photoUrl: { type: string }
+        bio: { type: string }
+        isHOD: { type: boolean }
+
+    # ─── ADMISSIONS ────────────────────────────────────────────────────────────
+    AdmissionLead:
+      type: object
+      required: [id, name, email, phone, courseInterest, status, createdAt]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        email: { type: string }
+        phone: { type: string }
+        courseInterest: { type: string }
+        qualification: { type: ["string", "null"] }
+        message: { type: ["string", "null"] }
+        status: { type: string, description: "new | contacted | enrolled | rejected" }
+        createdAt: { type: string }
+
+    AdmissionLeadInput:
+      type: object
+      required: [name, email, phone, courseInterest]
+      properties:
+        name: { type: string }
+        email: { type: string }
+        phone: { type: string }
+        courseInterest: { type: string }
+        qualification: { type: string }
+        message: { type: string }
+
+    AdmissionLeadUpdate:
+      type: object
+      properties:
+        status: { type: string }
+        message: { type: string }
+
+    # ─── NEWS ──────────────────────────────────────────────────────────────────
+    NewsItem:
+      type: object
+      required: [id, title, content, category, publishedAt, createdAt]
+      properties:
+        id: { type: integer }
+        title: { type: string }
+        content: { type: string }
+        category: { type: string, description: "announcement | event | achievement | news" }
+        imageUrl: { type: ["string", "null"] }
+        publishedAt: { type: string }
+        isPinned: { type: boolean }
+        createdAt: { type: string }
+
+    NewsInput:
+      type: object
+      required: [title, content, category]
+      properties:
+        title: { type: string }
+        content: { type: string }
+        category: { type: string }
+        imageUrl: { type: string }
+        publishedAt: { type: string }
+        isPinned: { type: boolean }
+
+    NewsUpdate:
+      type: object
+      properties:
+        title: { type: string }
+        content: { type: string }
+        category: { type: string }
+        imageUrl: { type: string }
+        publishedAt: { type: string }
+        isPinned: { type: boolean }
+
+    # ─── MEDIA ─────────────────────────────────────────────────────────────────
+    MediaItem:
+      type: object
+      required: [id, title, type, url, category, createdAt]
+      properties:
+        id: { type: integer }
+        title: { type: string }
+        type: { type: string, description: "image | video" }
+        url: { type: string }
+        thumbnailUrl: { type: ["string", "null"] }
+        category: { type: string, description: "campus | events | labs | sports | cultural" }
+        createdAt: { type: string }
+
+    MediaInput:
+      type: object
+      required: [title, type, url, category]
+      properties:
+        title: { type: string }
+        type: { type: string }
+        url: { type: string }
+        thumbnailUrl: { type: string }
+        category: { type: string }
+
+    # ─── PLACEMENTS ────────────────────────────────────────────────────────────
+    Placement:
+      type: object
+      required: [id, studentName, company, package, department, year, createdAt]
+      properties:
+        id: { type: integer }
+        studentName: { type: string }
+        company: { type: string }
+        package: { type: string, description: "e.g. 5.5 LPA" }
+        role: { type: ["string", "null"] }
+        department: { type: string }
+        year: { type: integer }
+        logoUrl: { type: ["string", "null"] }
+        testimonial: { type: ["string", "null"] }
+        createdAt: { type: string }
+
+    PlacementInput:
+      type: object
+      required: [studentName, company, package, department, year]
+      properties:
+        studentName: { type: string }
+        company: { type: string }
+        package: { type: string }
+        role: { type: string }
+        department: { type: string }
+        year: { type: integer }
+        logoUrl: { type: string }
+        testimonial: { type: string }
+
+    PlacementUpdate:
+      type: object
+      properties:
+        studentName: { type: string }
+        company: { type: string }
+        package: { type: string }
+        role: { type: string }
+        department: { type: string }
+        year: { type: integer }
+        logoUrl: { type: string }
+        testimonial: { type: string }
+
+    # ─── CONTACT ───────────────────────────────────────────────────────────────
+    ContactSubmission:
+      type: object
+      required: [id, name, email, subject, message, createdAt]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        email: { type: string }
+        phone: { type: ["string", "null"] }
+        subject: { type: string }
+        message: { type: string }
+        createdAt: { type: string }
+
+    ContactInput:
+      type: object
+      required: [name, email, subject, message]
+      properties:
+        name: { type: string }
+        email: { type: string }
+        phone: { type: string }
+        subject: { type: string }
+        message: { type: string }
+
+    # ─── ADMIN ─────────────────────────────────────────────────────────────────
+    AdminCredentials:
+      type: object
+      required: [username, password]
+      properties:
+        username: { type: string }
+        password: { type: string }
+
+    AdminSession:
+      type: object
+      required: [id, username, isAdmin]
+      properties:
+        id: { type: integer }
+        username: { type: string }
+        isAdmin: { type: boolean }
+
+    # ─── STATS ─────────────────────────────────────────────────────────────────
+    DashboardStats:
+      type: object
+      required: [totalCourses, totalFaculty, totalStudents, totalPlacements, totalLeads, recentNews, pendingLeads]
+      properties:
+        totalCourses: { type: integer }
+        totalFaculty: { type: integer }
+        totalStudents: { type: integer }
+        totalPlacements: { type: integer }
+        totalLeads: { type: integer }
+        recentNews: { type: integer }
+        pendingLeads: { type: integer }
+
+    PlacementStats:
+      type: object
+      required: [totalPlaced, averagePackage, highestPackage, topCompanies, byYear, byDepartment]
+      properties:
+        totalPlaced: { type: integer }
+        averagePackage: { type: string }
+        highestPackage: { type: string }
+        topCompanies:
+          type: array
+          items:
+            type: object
+            required: [company, count]
+            properties:
+              company: { type: string }
+              count: { type: integer }
+        byYear:
+          type: array
+          items:
+            type: object
+            required: [year, count]
+            properties:
+              year: { type: integer }
+              count: { type: integer }
+        byDepartment:
+          type: array
+          items:
+            type: object
+            required: [department, count]
+            properties:
+              department: { type: string }
+              count: { type: integer }

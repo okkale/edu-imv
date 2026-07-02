@@ -536,7 +536,7 @@ export default function Admissions() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-border text-sm">
                 <div className="flex items-center gap-3">
                   <Phone className="h-4 w-4 text-accent shrink-0" />
-                  <span className="font-semibold text-primary">+91 89836 83005 / +91 89836 73005</span>
+                  <span className="font-semibold text-primary">+91 94223 50872 / +91 94223 50872</span>
                 </div>
                 <div className="flex items-center gap-3">
                   <Mail className="h-4 w-4 text-accent shrink-0" />
@@ -594,7 +594,7 @@ export default function Admissions() {
                           <FormItem>
                             <FormLabel>Phone Number *</FormLabel>
                             <FormControl>
-                              <Input placeholder="+91 9876543210" {...field} />
+                              <Input placeholder="+91 94223 50872" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>

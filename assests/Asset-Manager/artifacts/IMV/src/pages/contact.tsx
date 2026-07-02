@@ -97,8 +97,8 @@ export default function Contact() {
                     <div>
                       <h3 className="font-semibold text-foreground text-lg mb-1">Phone Number</h3>
                       <p className="text-muted-foreground">
-                        <a href="tel:+918983683005" className="hover:text-primary transition-colors">+91 89836 83005</a><br/>
-                        <a href="tel:+918983673005" className="hover:text-primary transition-colors">+91 89836 73005</a> (Admissions)
+                        <a href="tel:+91 94223 50872" className="hover:text-primary transition-colors">+91 94223 50872</a><br/>
+                        <a href="tel:+91 94223 50872" className="hover:text-primary transition-colors">+91 94223 50872</a> (Admissions)
                       </p>
                     </div>
                   </div>
@@ -168,7 +168,7 @@ export default function Contact() {
                             <FormItem>
                               <FormLabel>Phone Number (Optional)</FormLabel>
                               <FormControl>
-                                <Input placeholder="+91 9876543210" className="h-12" {...field} />
+                                <Input placeholder="+91 94223 50872" className="h-12" {...field} />
                               </FormControl>
                               <FormMessage />
                             </FormItem>

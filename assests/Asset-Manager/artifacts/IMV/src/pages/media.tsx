@@ -9,11 +9,11 @@ const CATEGORIES = ["All", "campus", "events", "labs", "sports", "cultural"];
 
 export default function Media() {
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
-  
+
   const { data: mediaItemsData, isLoading } = useGetMediaItems(
     selectedCategory !== "All" ? { category: selectedCategory } : undefined
   );
-  
+
   const mediaItems = Array.isArray(mediaItemsData) ? mediaItemsData : [];
 
   return (
@@ -27,7 +27,7 @@ export default function Media() {
         </div>
       </section>
 
-      <section className="py-8 bg-background border-b border-border sticky top-[64px] md:top-[80px] z-40 shadow-sm">
+      <section className="py-8 bg-background border-b border-border sticky top-[64px] md:top-[0px] z-40 shadow-sm">
         <div className="container mx-auto px-4 overflow-x-auto pb-2 -mb-2">
           <div className="flex gap-2 min-w-max justify-center">
             {CATEGORIES.map((cat) => (
@@ -58,17 +58,17 @@ export default function Media() {
                 <div key={item.id} className="group relative aspect-square rounded-xl overflow-hidden bg-muted border border-border shadow-sm cursor-pointer">
                   {item.type === 'video' && !item.thumbnailUrl ? (
                     <div className="absolute inset-0 flex flex-col items-center justify-center text-muted-foreground bg-primary/5">
-                       <PlayCircle className="h-12 w-12 mb-2 opacity-50" />
-                       <span className="text-sm font-medium px-4 text-center">{item.title}</span>
+                      <PlayCircle className="h-12 w-12 mb-2 opacity-50" />
+                      <span className="text-sm font-medium px-4 text-center">{item.title}</span>
                     </div>
                   ) : (
-                    <img 
-                      src={item.thumbnailUrl || item.url} 
-                      alt={item.title} 
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" 
+                    <img
+                      src={item.thumbnailUrl || item.url}
+                      alt={item.title}
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                     />
                   )}
-                  
+
                   {/* Overlay */}
                   <div className="absolute inset-0 bg-primary/80 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-4">
                     <div className="translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
@@ -79,7 +79,7 @@ export default function Media() {
                       <h3 className="text-white font-semibold line-clamp-2">{item.title}</h3>
                     </div>
                   </div>
-                  
+
                   {/* Play icon badge for videos */}
                   {item.type === 'video' && item.thumbnailUrl && (
                     <div className="absolute top-4 right-4 h-8 w-8 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center text-white">

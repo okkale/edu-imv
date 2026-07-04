@@ -1,13 +1,13 @@
 import { Link, useLocation } from "wouter";
 import { Menu, X, ChevronDown, Phone, Mail } from "lucide-react";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 
 const DEPARTMENTS = [
-  "BCA",
-  "BBA",
-  "MCA",
-  "MBA",
+  { name: "BCA", id: "bca" },
+  { name: "BBA", id: "bba" },
+  { name: "MCA", id: "mca" },
+  { name: "MBA", id: "mba" },
 ];
 
 export function Navbar() {
@@ -17,10 +17,28 @@ export function Navbar() {
   const [showAdmissionDropdown, setShowAdmissionDropdown] = useState(false);
   const [showMobileAdmission, setShowMobileAdmission] = useState(false);
 
+  // Refs to hold delayed-close timers so hover feels smooth
+  const megaMenuTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const admissionTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const openMegaMenu = () => {
+    if (megaMenuTimer.current) clearTimeout(megaMenuTimer.current);
+    setShowMegaMenu(true);
+  };
+  const closeMegaMenu = () => {
+    megaMenuTimer.current = setTimeout(() => setShowMegaMenu(false), 280);
+  };
+  const openAdmission = () => {
+    if (admissionTimer.current) clearTimeout(admissionTimer.current);
+    setShowAdmissionDropdown(true);
+  };
+  const closeAdmission = () => {
+    admissionTimer.current = setTimeout(() => setShowAdmissionDropdown(false), 280);
+  };
+
   const navLinksBefore = [{ href: "/about", label: "About Us" }];
 
   const navLinksAfter = [
-    { href: "/faculty", label: "Faculty" },
     { href: "/placements", label: "Placements" },
     { href: "/naac", label: "NAAC" },
     { href: "/support", label: "Support" },
@@ -49,9 +67,9 @@ export function Navbar() {
       </div>
       <div className="container mx-auto px-4 h-16 md:h-20 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2 md:gap-3">
-          <img 
-            src="/ymkcoe_logo.png" 
-            alt="Indrayani Mahavidyalaya Logo" 
+          <img
+            src="/ymkcoe_logo.png"
+            alt="Indrayani Mahavidyalaya Logo"
             className="h-10 w-auto md:h-12 lg:h-14 xl:h-16 object-contain"
           />
           <div className="flex flex-col justify-center items-start text-left select-none whitespace-nowrap">
@@ -74,26 +92,26 @@ export function Navbar() {
           </Link>
 
           {/* Courses Mega Menu Trigger */}
-          <div 
+          <div
             className="relative"
-            onMouseEnter={() => setShowMegaMenu(true)}
-            onMouseLeave={() => setShowMegaMenu(false)}
+            onMouseEnter={openMegaMenu}
+            onMouseLeave={closeMegaMenu}
           >
             <Link href="/academics">
               <span className={`flex items-center justify-center gap-0.5 lg:gap-1 px-1 lg:px-1.5 xl:px-2.5 py-2 rounded-md text-[10px] lg:text-[11px] xl:text-xs 2xl:text-sm font-medium transition-colors hover:bg-muted whitespace-nowrap ${location.startsWith("/academics") || location.startsWith("/courses") ? "text-accent font-semibold" : "text-foreground"}`}>
-                Academics <ChevronDown className="h-3 w-3 md:h-3.5 md:w-3.5" />
+                Courses <ChevronDown className="h-3 w-3 md:h-3.5 md:w-3.5" />
               </span>
             </Link>
-            
+
             {showMegaMenu && (
               <div className="absolute top-full left-1/2 -translate-x-1/2 w-[400px] bg-background border border-border rounded-lg shadow-lg p-4 mt-1 grid grid-cols-2 gap-2 animate-in fade-in zoom-in-95 duration-200">
                 <div className="col-span-2 mb-2 pb-2 border-b border-border">
                   <h3 className="font-semibold text-primary">Academic Departments</h3>
                 </div>
                 {DEPARTMENTS.map((dept) => (
-                  <Link key={dept} href={`/courses?dept=${encodeURIComponent(dept)}`}>
+                  <Link key={dept.id} href={`/courses/${dept.id}`}>
                     <span className="block px-3 py-2 rounded-md text-sm hover:bg-muted hover:text-accent transition-colors">
-                      {dept}
+                      {dept.name}
                     </span>
                   </Link>
                 ))}
@@ -117,17 +135,17 @@ export function Navbar() {
           ))}
 
           {/* Admission Dropdown */}
-          <div 
+          <div
             className="relative"
-            onMouseEnter={() => setShowAdmissionDropdown(true)}
-            onMouseLeave={() => setShowAdmissionDropdown(false)}
+            onMouseEnter={openAdmission}
+            onMouseLeave={closeAdmission}
           >
             <Link href="/admissions">
               <span className={`flex items-center justify-center gap-0.5 lg:gap-1 px-1 lg:px-1.5 xl:px-2.5 py-2 rounded-md text-[10px] lg:text-[11px] xl:text-xs 2xl:text-sm font-medium transition-colors hover:bg-muted whitespace-nowrap ${location.startsWith("/admissions") ? "text-accent font-semibold" : "text-foreground"}`}>
                 Admission <ChevronDown className="h-3 w-3 md:h-3.5 md:w-3.5" />
               </span>
             </Link>
-            
+
             {showAdmissionDropdown && (
               <div className="absolute top-full left-1/2 -translate-x-1/2 w-[240px] bg-background border border-border rounded-lg shadow-lg p-2 mt-1 flex flex-col gap-1 z-50 animate-in fade-in zoom-in-95 duration-200">
                 <Link href="/admissions?tab=eligibility">
@@ -197,7 +215,7 @@ export function Navbar() {
               </span>
             </Link>
           ))}
-          
+
           <div className="ml-1 pl-2 border-l border-border flex items-center">
             <Link href="/admissions">
               <Button variant="default" className="bg-accent text-accent-foreground hover:bg-accent/90 px-2 lg:px-2.5 xl:px-4 text-[10px] lg:text-[11px] xl:text-xs 2xl:text-sm h-7 lg:h-8 xl:h-10 font-semibold shadow-sm whitespace-nowrap">Apply Now</Button>
@@ -206,7 +224,7 @@ export function Navbar() {
         </nav>
 
         {/* Mobile Menu Toggle */}
-        <button 
+        <button
           className="lg:hidden p-2 text-foreground"
           onClick={() => setIsOpen(!isOpen)}
         >
@@ -221,8 +239,8 @@ export function Navbar() {
             <Link href="/">
               <span className="block px-4 py-2 rounded-md text-base font-medium hover:bg-muted" onClick={() => setIsOpen(false)}>Home</span>
             </Link>
-            <Link href="/academics">
-              <span className="block px-4 py-2 rounded-md text-base font-medium hover:bg-muted" onClick={() => setIsOpen(false)}>Academics</span>
+            <Link href="/courses">
+              <span className="block px-4 py-2 rounded-md text-base font-medium hover:bg-muted" onClick={() => setIsOpen(false)}>Courses</span>
             </Link>
             {navLinksBefore.map((link) => (
               <Link key={link.href} href={link.href}>
@@ -238,7 +256,7 @@ export function Navbar() {
 
             {/* Mobile Admission Accordion */}
             <div>
-              <button 
+              <button
                 onClick={() => setShowMobileAdmission(!showMobileAdmission)}
                 className="w-full flex items-center justify-between px-4 py-2 rounded-md text-base font-medium hover:bg-muted text-left"
               >

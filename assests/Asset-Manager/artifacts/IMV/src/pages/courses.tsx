@@ -1,214 +1,181 @@
 import { AppLayout } from "@/components/layout/AppLayout";
-// API client import removed since we are hardcoding the courses now
-import { useState } from "react";
+import { useLocation, Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Clock, Users, BookOpen } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
+import { Laptop, Briefcase, BrainCircuit, Users, ArrowRight } from "lucide-react";
 
-const DEPARTMENTS = [
-  "All",
-  "Management",
-  "Computer Application",
-
-];
-
-const PHARMACY_COURSES = [
-  { id: '1', name: 'BBA', department: 'Management', type: 'Undergraduate', duration: '3 Years', seats: 180, eligibility: '10+2 with Any Stream', description: 'A three-year undergraduate management course focusing on business administration, finance, and marketing.', imageUrl: '/bba.png' },
-  { id: '2', name: 'BCA', department: 'Computer Application', type: 'Undergraduate', duration: '3 Years', seats: 120, eligibility: '10+2 with Any Stream', description: 'A three-year undergraduate IT course specializing in computer applications, programming, and software development.', imageUrl: '/bca.png' },
-  { id: '3', name: 'MBA', department: 'Management', type: 'Postgraduate', duration: '2 Years', seats: 60, eligibility: 'Any Graduate', description: ' A two-year postgraduate management degree designed for advanced leadership, strategy, and specialized business roles.', imageUrl: '/mba.png' },
-  { id: '4', name: 'MCA', department: 'Computer Application', type: 'Postgraduate', duration: '2 Years', seats: 60, eligibility: 'BCA', description: 'A two-year postgraduate IT degree covering advanced software engineering, data science, and system architecture.', imageUrl: '/mca.png' },
+const ACADEMIC_PROGRAMS = [
+  {
+    id: "bca",
+    program: "B.C.A.",
+    name: "Bachelor of Computer Applications",
+    intake: "120",
+    choiceCode: "1617399510",
+    choiceCodeTfws: "1617399511T",
+    icon: Laptop,
+    description: "A three-year undergraduate course specializing in computer applications, logic building, software development, and modern web frameworks.",
+    color: "from-blue-500/10 to-indigo-500/10",
+    iconColor: "text-blue-600",
+  },
+  {
+    id: "bba",
+    program: "B.B.A.",
+    name: "Bachelor of Business Administration",
+    intake: "180",
+    choiceCode: "1617324210",
+    choiceCodeTfws: "1617324211T",
+    icon: Briefcase,
+    description: "A three-year undergraduate management course focusing on business administration principles, corporate finance, marketing, and leadership skills.",
+    color: "from-orange-500/10 to-amber-500/10",
+    iconColor: "text-orange-600",
+  },
+  {
+    id: "mca",
+    program: "M.C.A.",
+    name: "Master of Computer Applications",
+    intake: "60",
+    choiceCode: "1617324610",
+    choiceCodeTfws: "1617324611T",
+    icon: BrainCircuit,
+    description: "A two-year postgraduate degree covering advanced computer science, cloud architectures, database engineering, and machine learning models.",
+    color: "from-purple-500/10 to-pink-500/10",
+    iconColor: "text-purple-600",
+  },
+  {
+    id: "mba",
+    program: "M.B.A.",
+    name: "Master of Business Administration",
+    intake: "60",
+    choiceCode: "1617337210",
+    choiceCodeTfws: "1617337211T",
+    icon: Users,
+    description: "A two-year postgraduate management course designed for developing corporate strategists, managers, and entrepreneurs with global vision.",
+    color: "from-teal-500/10 to-emerald-500/10",
+    iconColor: "text-teal-600",
+  },
 ];
 
 export default function Courses() {
-  const [selectedDept, setSelectedDept] = useState<string>("All");
-  const [activeCourse, setActiveCourse] = useState<any>(null);
+  const [, setLocation] = useLocation();
 
-  const isLoading = false;
-  const courses = selectedDept === "All"
-    ? PHARMACY_COURSES
-    : PHARMACY_COURSES.filter(c => c.department === selectedDept);
+  const handleRowClick = (id: string) => {
+    setLocation(`/courses/${id}`);
+  };
 
   return (
     <AppLayout>
+      {/* Hero Section */}
       <section className="bg-primary text-white py-16">
         <div className="container mx-auto px-4">
           <h1 className="text-4xl md:text-5xl font-bold mb-4">Academic Programs</h1>
           <p className="text-lg text-primary-foreground/80 max-w-2xl">
-            Explore our comprehensive range of undergraduate and postgraduate programs designed to build excellence.
+            Explore our comprehensive range of undergraduate and postgraduate programs designed to foster technical competence, business leadership, and career readiness.
           </p>
         </div>
       </section>
 
-      <section className="py-8 bg-background border-b border-border sticky top-[64px] md:top-[0px] z-40 shadow-xsm">
-        <div className="container mx-auto px-4 overflow-x-auto pb-2 -mb-2">
-          <div className="flex gap-2 min-w-max">
-            {DEPARTMENTS.map((dept) => (
-              <Button
-                key={dept}
-                variant={selectedDept === dept ? "default" : "outline"}
-                onClick={() => setSelectedDept(dept)}
-                className={selectedDept === dept ? "bg-accent hover:bg-accent/90" : ""}
-              >
-                {dept}
+      {/* Programs Table Section */}
+      <section className="py-16 bg-background">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
+            <div>
+              <h2 className="text-2xl md:text-3xl font-bold text-primary tracking-tight">
+                Academic Programs Offered by Indrayani Mahavidyalaya
+              </h2>
+              <p className="text-sm md:text-base text-muted-foreground mt-2">
+                DTE Code: 16173 - Total intake: 420 seats across 4 programs
+              </p>
+            </div>
+            <Link href="/admissions">
+              <Button className="bg-[#f59e0b] hover:bg-[#d97706] text-white font-semibold flex items-center gap-2 group px-6 py-5 rounded-lg shadow-md transition-all duration-300">
+                Apply Now <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
               </Button>
-            ))}
+            </Link>
+          </div>
+
+          {/* Table Container */}
+          <div className="overflow-x-auto rounded-xl border border-border/80 shadow-md bg-white">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-[#f59e0b] text-white">
+                  <th className="p-4 font-bold text-sm md:text-base tracking-wide border-r border-white/20">Program</th>
+                  <th className="p-4 font-bold text-sm md:text-base tracking-wide border-r border-white/20">Name of Course</th>
+                  <th className="p-4 font-bold text-sm md:text-base tracking-wide text-center border-r border-white/20">Intake</th>
+                  <th className="p-4 font-bold text-sm md:text-base tracking-wide border-r border-white/20">Choice Code</th>
+                  <th className="p-4 font-bold text-sm md:text-base tracking-wide">Choice Code (TFWS)</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border/60 bg-white">
+                {ACADEMIC_PROGRAMS.map((prog) => (
+                  <tr
+                    key={prog.id}
+                    onClick={() => handleRowClick(prog.id)}
+                    className="hover:bg-slate-50/80 transition-colors duration-200 cursor-pointer group"
+                  >
+                    <td className="p-4 text-sm md:text-base text-foreground font-medium border-r border-border/40">
+                      {prog.program}
+                    </td>
+                    <td className="p-4 text-sm md:text-base text-primary font-semibold group-hover:text-[#f59e0b] transition-colors border-r border-border/40">
+                      {prog.name}
+                    </td>
+                    <td className="p-4 text-sm md:text-base text-foreground font-bold text-center border-r border-border/40">
+                      {prog.intake}
+                    </td>
+                    <td className="p-4 text-sm md:text-base text-muted-foreground font-mono tracking-tight border-r border-border/40">
+                      {prog.choiceCode}
+                    </td>
+                    <td className="p-4 text-sm md:text-base text-muted-foreground font-mono tracking-tight">
+                      {prog.choiceCodeTfws}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       </section>
 
-      <section className="py-16 bg-muted/20">
-        <div className="container mx-auto px-4">
-          {isLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
-                <Card key={i} className="overflow-hidden">
-                  <Skeleton className="h-48 w-full rounded-none" />
-                  <CardContent className="p-6">
-                    <Skeleton className="h-4 w-24 mb-4" />
-                    <Skeleton className="h-6 w-full mb-4" />
-                    <Skeleton className="h-4 w-full mb-2" />
-                    <Skeleton className="h-4 w-2/3 mb-6" />
-                    <div className="flex gap-4">
-                      <Skeleton className="h-4 w-20" />
-                      <Skeleton className="h-4 w-20" />
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : courses.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {courses.map((course) => (
-                <Card 
-                  key={course.id} 
-                  className="overflow-hidden hover:shadow-lg transition-all duration-300 flex flex-col h-full border-border cursor-pointer group"
-                  onClick={() => setActiveCourse(course)}
+      {/* Explore Each Department Section */}
+      <section className="py-16 bg-muted/20 border-t border-border/60">
+        <div className="container mx-auto px-4 text-center">
+          <h2 className="text-3xl font-bold text-primary tracking-tight mb-3">
+            Explore Each Department
+          </h2>
+          <p className="text-muted-foreground max-w-2xl mx-auto mb-12">
+            Select a department to view faculty, academics, syllabus, and more.
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto text-left">
+            {ACADEMIC_PROGRAMS.map((prog) => {
+              const Icon = prog.icon;
+              return (
+                <Card
+                  key={prog.id}
+                  onClick={() => handleRowClick(prog.id)}
+                  className="hover:shadow-lg border-border/80 transition-all duration-300 cursor-pointer flex flex-col h-full group hover:border-[#f59e0b]/50"
                 >
-                  <div className="h-48 bg-secondary/10 relative overflow-hidden">
-                    {(course as any).imageUrl ? (
-                      <img 
-                        src={(course as any).imageUrl} 
-                        alt={course.name} 
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" 
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-muted-foreground bg-muted">
-                        <BookOpen className="h-12 w-12 opacity-20" />
-                      </div>
-                    )}
-                  </div>
-                  <CardContent className="p-5 flex-1 flex flex-col justify-between">
+                  <CardContent className="p-6 flex-1 flex flex-col justify-between">
                     <div>
-                      <div className="text-xs font-semibold text-accent uppercase tracking-wider mb-2">
-                        {course.department}
+                      <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${prog.color} flex items-center justify-center mb-5 group-hover:scale-110 transition-transform`}>
+                        <Icon className={`w-6 h-6 ${prog.iconColor}`} />
                       </div>
-                      <h3 className="text-xl font-bold text-primary mb-2 group-hover:text-accent transition-colors">{course.name}</h3>
-                      <p className="text-sm text-muted-foreground line-clamp-2">
-                        {course.description || "No description provided."}
+                      <h3 className="text-lg font-bold text-primary mb-3 group-hover:text-[#f59e0b] transition-colors leading-snug">
+                        {prog.name}
+                      </h3>
+                      <p className="text-sm text-muted-foreground leading-relaxed mb-6">
+                        {prog.description}
                       </p>
                     </div>
-                    <div className="mt-4 pt-4 border-t border-border flex justify-between items-center text-sm font-medium text-accent">
-                      <span>View Course Details</span>
-                      <span className="transition-transform group-hover:translate-x-1">→</span>
+                    <div className="flex items-center text-sm font-semibold text-[#f59e0b] group-hover:underline mt-auto">
+                      Explore Department <ArrowRight className="ml-1.5 h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
                     </div>
                   </CardContent>
                 </Card>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-20 bg-white rounded-xl border border-border">
-              <BookOpen className="h-16 w-16 text-muted-foreground/30 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-primary mb-2">No courses found</h3>
-              <p className="text-muted-foreground">We couldn't find any courses matching your criteria.</p>
-            </div>
-          )}
+              );
+            })}
+          </div>
         </div>
       </section>
-
-      <Dialog open={!!activeCourse} onOpenChange={(open) => !open && setActiveCourse(null)}>
-        {activeCourse && (
-          <DialogContent className="sm:max-w-[600px] p-0 overflow-hidden border-border bg-background">
-            <div className="h-64 relative bg-secondary/10">
-              {activeCourse.imageUrl ? (
-                <img 
-                  src={activeCourse.imageUrl} 
-                  alt={activeCourse.name} 
-                  className="w-full h-full object-cover" 
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-muted-foreground bg-muted">
-                  <BookOpen className="h-16 w-16 opacity-20" />
-                </div>
-              )}
-              <Badge className="absolute top-4 left-4 bg-accent text-white">
-                {activeCourse.type}
-              </Badge>
-            </div>
-            <div className="p-6">
-              <DialogHeader className="mb-4">
-                <div className="text-xs font-semibold text-accent uppercase tracking-wider mb-1">
-                  {activeCourse.department} Department
-                </div>
-                <DialogTitle className="text-3xl font-bold text-primary">
-                  {activeCourse.name}
-                </DialogTitle>
-                <DialogDescription className="text-sm text-muted-foreground mt-2 leading-relaxed">
-                  {activeCourse.description || "No description provided."}
-                </DialogDescription>
-              </DialogHeader>
-
-              <div className="grid grid-cols-3 gap-4 text-sm bg-muted/50 p-5 rounded-xl border border-border/50 mb-6">
-                <div className="flex flex-col">
-                  <span className="text-xs text-muted-foreground mb-1 uppercase tracking-wider font-semibold">Duration</span>
-                  <div className="flex items-center text-foreground font-medium">
-                    <Clock className="h-4 w-4 mr-1.5 text-accent shrink-0" />
-                    <span>{activeCourse.duration}</span>
-                  </div>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-xs text-muted-foreground mb-1 uppercase tracking-wider font-semibold">Intake Seats</span>
-                  <div className="flex items-center text-foreground font-medium">
-                    <Users className="h-4 w-4 mr-1.5 text-accent shrink-0" />
-                    <span>{activeCourse.seats} Seats</span>
-                  </div>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-xs text-muted-foreground mb-1 uppercase tracking-wider font-semibold">Course Type</span>
-                  <div className="flex items-center text-foreground font-medium">
-                    <BookOpen className="h-4 w-4 mr-1.5 text-accent shrink-0" />
-                    <span>{activeCourse.type}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="border-t border-border pt-4 mb-6">
-                <h4 className="text-sm font-semibold text-primary mb-2">Eligibility Criteria</h4>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  {activeCourse.eligibility || "Standard university norms."}
-                </p>
-              </div>
-
-              <div className="flex justify-end gap-3">
-                <Button variant="outline" onClick={() => setActiveCourse(null)}>
-                  Close
-                </Button>
-                <Button className="bg-accent hover:bg-accent/90 text-white">
-                  Apply Now
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        )}
-      </Dialog>
     </AppLayout>
   );
 }

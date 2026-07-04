@@ -7,6 +7,7 @@ import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
 import About from "@/pages/about";
 import Courses from "@/pages/courses";
+import CourseDetails from "@/pages/course-details";
 import Faculty from "@/pages/faculty";
 import Admissions from "@/pages/admissions";
 import Placements from "@/pages/placements";
@@ -48,6 +49,7 @@ function Router() {
       <Route path="/Secretary.php" component={() => <LegacyRedirect to="/about" />} />
       <Route path="/VISIONMISSION.php" component={() => <LegacyRedirect to="/about" />} />
       <Route path="/courses" component={Courses} />
+      <Route path="/courses/:id" component={CourseDetails} />
       <Route path="/academics" component={() => <LegacyRedirect to="/courses" />} />
       <Route path="/ACADEMICPROGRAM.php" component={() => <LegacyRedirect to="/courses" />} />
       <Route path="/indryaniMarathiDepartment.php" component={() => <LegacyRedirect to="/courses" />} />

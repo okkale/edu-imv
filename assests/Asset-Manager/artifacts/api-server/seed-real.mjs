@@ -288,10 +288,26 @@ async function seed() {
     ];
 
     for (const f of faculty) {
+      const experienceStr = f.experience !== null && f.experience !== undefined ? String(f.experience) : null;
       await client.query(
-        `INSERT INTO faculty (name, department, designation, qualification, specialization, experience, is_hod, bio)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
-        [f.name, f.department, f.designation, f.qualification, f.specialization, f.experience, f.is_hod, f.bio]
+        `INSERT INTO faculty (name, title, department, designation, qualification, specialization, experience, skills, publications, memberships, research_guide, admin_roles, is_hod, bio)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)`,
+        [
+          f.name,
+          f.title || null,
+          f.department,
+          f.designation,
+          f.qualification || null,
+          f.specialization || null,
+          experienceStr,
+          f.skills || null,
+          f.publications || null,
+          f.memberships || null,
+          f.researchGuide || null,
+          f.adminRoles || null,
+          f.is_hod,
+          f.bio || null
+        ]
       );
     }
     console.log("✓ 19 faculty seeded");

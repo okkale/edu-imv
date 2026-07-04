@@ -18,6 +18,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -225,7 +226,21 @@ export function FacultyManager() {
                 <FormField control={form.control} name="department" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Department / Institution</FormLabel>
-                    <FormControl><Input placeholder="Computer Applications" {...field} /></FormControl>
+                    <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select Department" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="BBA">BBA</SelectItem>
+                        <SelectItem value="BCA">BCA</SelectItem>
+                        <SelectItem value="MBA">MBA</SelectItem>
+                        <SelectItem value="MCA">MCA</SelectItem>
+                        <SelectItem value="Computer Applications">Computer Applications (Legacy/General)</SelectItem>
+                        <SelectItem value="Management Studies">Management Studies (Legacy/General)</SelectItem>
+                      </SelectContent>
+                    </Select>
                     <FormMessage/>
                   </FormItem>
                 )} />

@@ -696,11 +696,17 @@ components:
       properties:
         id: { type: integer }
         name: { type: string }
+        title: { type: ["string", "null"] }
         department: { type: string }
         designation: { type: string }
         qualification: { type: ["string", "null"] }
         specialization: { type: ["string", "null"] }
-        experience: { type: ["integer", "null"] }
+        experience: { type: ["string", "null"] }
+        skills: { type: ["string", "null"] }
+        publications: { type: ["string", "null"] }
+        memberships: { type: ["string", "null"] }
+        researchGuide: { type: ["string", "null"] }
+        adminRoles: { type: ["string", "null"] }
         email: { type: ["string", "null"] }
         phone: { type: ["string", "null"] }
         photoUrl: { type: ["string", "null"] }
@@ -713,11 +719,17 @@ components:
       required: [name, department, designation]
       properties:
         name: { type: string }
+        title: { type: string }
         department: { type: string }
         designation: { type: string }
         qualification: { type: string }
         specialization: { type: string }
-        experience: { type: integer }
+        experience: { type: string }
+        skills: { type: string }
+        publications: { type: string }
+        memberships: { type: string }
+        researchGuide: { type: string }
+        adminRoles: { type: string }
         email: { type: string }
         phone: { type: string }
         photoUrl: { type: string }
@@ -728,11 +740,17 @@ components:
       type: object
       properties:
         name: { type: string }
+        title: { type: string }
         department: { type: string }
         designation: { type: string }
         qualification: { type: string }
         specialization: { type: string }
-        experience: { type: integer }
+        experience: { type: string }
+        skills: { type: string }
+        publications: { type: string }
+        memberships: { type: string }
+        researchGuide: { type: string }
+        adminRoles: { type: string }
         email: { type: string }
         phone: { type: string }
         photoUrl: { type: string }

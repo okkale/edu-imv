@@ -11,11 +11,11 @@ const CATEGORIES = ["All", "announcement", "event", "achievement", "news"];
 
 export default function News() {
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
-  
+
   const { data: newsItemsData, isLoading } = useGetNews(
     selectedCategory !== "All" ? { category: selectedCategory } : undefined
   );
-  
+
   const newsItems = Array.isArray(newsItemsData) ? newsItemsData : [];
 
   const getCategoryColor = (category: string) => {
@@ -38,7 +38,7 @@ export default function News() {
         </div>
       </section>
 
-      <section className="py-8 bg-background border-b border-border sticky top-[64px] md:top-[80px] z-40 shadow-sm">
+      <section className="py-8 bg-background border-b border-border sticky top-[64px] md:top-[0px] z-40 shadow-sm">
         <div className="container mx-auto px-4 overflow-x-auto pb-2 -mb-2">
           <div className="flex gap-2 min-w-max">
             {CATEGORIES.map((cat) => (
@@ -95,15 +95,15 @@ export default function News() {
                           </div>
                         )}
                       </div>
-                      
+
                       <h2 className="text-2xl font-bold text-primary mb-3 hover:text-accent transition-colors cursor-pointer">
                         {item.title}
                       </h2>
-                      
+
                       <p className="text-muted-foreground mb-6 line-clamp-3">
                         {item.content}
                       </p>
-                      
+
                       <div className="flex items-center justify-between mt-auto border-t border-border pt-4">
                         <div className="flex items-center text-sm font-medium text-muted-foreground">
                           <Calendar className="h-4 w-4 mr-2" />

@@ -31,7 +31,7 @@ export default function AdminLogin() {
   });
 
   const onSubmit = (data: LoginFormValues) => {
-    login.mutate(data, {
+    login.mutate({ data }, {
       onSuccess: () => {
         setLocation("/admin/dashboard");
       },

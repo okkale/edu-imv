@@ -5,11 +5,29 @@ import { Briefcase, TrendingUp, Award, Building2 } from "lucide-react";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, CartesianGrid } from "recharts";
 import { Skeleton } from "@/components/ui/skeleton";
 
+interface TopRecruiter {
+  company: string;
+  count: number;
+}
+
+interface YearTrend {
+  year: string;
+  count: number;
+}
+
+interface PlacementStats {
+  totalPlaced?: number;
+  averagePackage?: string;
+  highestPackage?: string;
+  byYear?: YearTrend[];
+  topCompanies?: TopRecruiter[];
+}
+
 export default function Placements() {
   const { data: statsData, isLoading: statsLoading } = useGetPlacementStats();
   const { data: placementsData, isLoading: placementsLoading } = useGetPlacements();
   
-  const stats = statsData || {};
+  const stats = (statsData || {}) as PlacementStats;
   const placements = Array.isArray(placementsData) ? placementsData : [];
 
   return (
@@ -160,7 +178,7 @@ export default function Placements() {
                   </div>
                 ) : stats?.topCompanies && stats.topCompanies.length > 0 ? (
                   <div className="space-y-4">
-                    {stats.topCompanies.map((tc, idx) => (
+                    {stats.topCompanies.map((tc: TopRecruiter, idx: number) => (
                       <div key={idx} className="flex items-center justify-between p-3 rounded-lg hover:bg-muted transition-colors border border-transparent hover:border-border">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded bg-white border border-border flex items-center justify-center font-bold text-xl text-primary/30">

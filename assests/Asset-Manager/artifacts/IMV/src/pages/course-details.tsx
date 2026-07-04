@@ -1180,7 +1180,31 @@ export default function CourseDetails({ params }: { params?: { id: string } }) {
                 {/* Grid layout containing primary blue card + subject cards */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 
+                  {/* Blue module explorer card */}
+                  <div className="bg-gradient-to-br from-blue-600 to-indigo-600 text-white rounded-2xl p-6 flex flex-col justify-between shadow-md group relative overflow-hidden min-h-[220px]">
+                    <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:16px_16px] pointer-events-none opacity-40"></div>
+                    <div>
+                      <div className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center mb-4">
+                        <BookMarked className="w-5 h-5 text-white" />
+                      </div>
+                      <h4 className="text-lg font-bold font-sans mb-2">Explore Modules</h4>
+                      <p className="text-white/80 text-xs md:text-sm leading-relaxed">
+                        Click to expand and view the detailed course structure, units, and learning objectives for this subject.
+                      </p>
+                    </div>
 
+                    {/* View syllabus button triggers popup for first subject */}
+                    <button
+                      onClick={() => {
+                        if (currentSyllabusSem.subjects.length > 0) {
+                          setActiveDetailSubject(currentSyllabusSem.subjects[0]);
+                        }
+                      }}
+                      className="mt-6 w-full py-2 bg-white text-indigo-600 hover:bg-slate-100 rounded-lg text-xs font-bold transition-all shadow-sm block text-center"
+                    >
+                      View Syllabus
+                    </button>
+                  </div>
 
                   {/* Subject Cards */}
                   {currentSyllabusSem.subjects.map((sub) => (

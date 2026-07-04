@@ -55,8 +55,8 @@ export function Navbar() {
             <a href="mailto:admission@indrayanicollege.com" className="flex items-center gap-1 hover:text-accent transition-colors">
               <Mail className="h-3 w-3" /> <span className="hidden md:inline">admission@indrayanicollege.com</span>
             </a>
-            <a href="tel:+918983683005" className="flex items-center gap-1 hover:text-accent transition-colors">
-              <Phone className="h-3 w-3" /> <span className="hidden md:inline">+91 89836 83005</span>
+            <a href="tel:+91 94223 50872" className="flex items-center gap-1 hover:text-accent transition-colors">
+              <Phone className="h-3 w-3" /> <span className="hidden md:inline">+91 94223 50872</span>
             </a>
           </div>
           <div className="flex items-center gap-4">

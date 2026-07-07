@@ -27,6 +27,9 @@ import {
   GraduationCap,
   Sparkles
 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Terminal } from "@/components/ui/terminal";
+import CourseGraph from "@/components/ui/course-graph";
 
 // Types
 interface Subject {
@@ -615,6 +618,7 @@ export default function CourseDetails({ params }: { params?: { id: string } }) {
   const course = courseId ? COURSE_DATA[courseId] : null;
 
   const [activeTab, setActiveTab] = useState<"faculty" | "academics" | "syllabus" | "calendar">("faculty");
+  const [crawlerComplete, setCrawlerComplete] = useState<boolean>(false);
 
   // States for Academics Tab Tree diagram
   const [isTreeExpanded, setIsTreeExpanded] = useState<boolean>(false);
@@ -626,6 +630,19 @@ export default function CourseDetails({ params }: { params?: { id: string } }) {
 
   // Subject detail popup state
   const [activeDetailSubject, setActiveDetailSubject] = useState<Subject | null>(null);
+
+  // Fallback timer for crawler animation
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (courseId === "bca" || courseId === "mca") {
+      timer = setTimeout(() => {
+        setCrawlerComplete(true);
+      }, 8000); // 8 seconds fallback
+    }
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [courseId]);
 
   // Fetch live faculty members from API
   const { data: facultyMembersData, isLoading: isFacultyLoading } = useGetFaculty(
@@ -723,6 +740,58 @@ export default function CourseDetails({ params }: { params?: { id: string } }) {
             <p className="text-base md:text-lg text-primary-foreground/80 leading-relaxed">
               {course.summary}
             </p>
+            {courseId === "bca" && (
+              <div className="mt-8 animate-in fade-in duration-500">
+                <Terminal
+                  commands={[
+                    "atul-crawler --target=bca",
+                    "fetch --url=edu-imv.vercel.app/courses/bca",
+                    "render --layout"
+                  ]}
+                  outputs={{
+                    0: [
+                      "✔ Connected to Indrayani Mahavidyalaya database...",
+                      "✔ Target: BCA (3 Years)"
+                    ],
+                    1: [
+                      "✔ Extracted 6 Semesters: Programming, Databases, Web Frameworks."
+                    ],
+                    2: [
+                      " [SUCCESS] BCA Course Layout Rendered Live."
+                    ]
+                  }}
+                  typingSpeed={45}
+                  delayBetweenCommands={1000}
+                  onComplete={() => setCrawlerComplete(true)}
+                />
+              </div>
+            )}
+            {courseId === "mca" && (
+              <div className="mt-8 animate-in fade-in duration-500">
+                <Terminal
+                  commands={[
+                    "atul-crawler --target=mca",
+                    "fetch --url=edu-imv.vercel.app/courses/mca",
+                    "deploy --env=production"
+                  ]}
+                  outputs={{
+                    0: [
+                      "✔ Connected to Indrayani Mahavidyalaya database...",
+                      "✔ Target: MCA (2 Years)"
+                    ],
+                    1: [
+                      "✔ Extracted 4 Semesters: Cloud Architectures, Machine Learning, DevOps."
+                    ],
+                    2: [
+                      " [SUCCESS] Production MCA Environment Deployed and Rendered."
+                    ]
+                  }}
+                  typingSpeed={45}
+                  delayBetweenCommands={1000}
+                  onComplete={() => setCrawlerComplete(true)}
+                />
+              </div>
+            )}
           </div>
         </div>
       </section>
@@ -776,37 +845,203 @@ export default function CourseDetails({ params }: { params?: { id: string } }) {
 
       {/* Vision & Mission section */}
       <section className="py-16 bg-background">
-        <div className="container mx-auto px-4 grid grid-cols-1 lg:grid-cols-2 gap-10">
-          <Card className="border-border shadow-md">
-            <CardContent className="p-8">
-              <div className="h-12 w-12 bg-[#f59e0b]/10 rounded-xl flex items-center justify-center text-[#f59e0b] mb-6">
-                <Eye className="h-6 w-6" />
+        {courseId === "bca" || courseId === "mca" ? (
+          <div className="container mx-auto px-4 grid grid-cols-1 lg:grid-cols-2 gap-10">
+            {/* Vision Card */}
+            <motion.div
+              initial={{ opacity: 0, y: 40 }}
+              animate={crawlerComplete ? { opacity: 1, y: 0 } : undefined}
+              whileInView={!crawlerComplete ? { opacity: 1, y: 0 } : undefined}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="rounded-2xl overflow-hidden bg-slate-950 border border-slate-800 shadow-xl flex flex-col font-mono hover:border-[#f59e0b]/50 hover:shadow-[0_0_20px_rgba(245,158,11,0.15)] transition-all duration-300 group"
+            >
+              {/* IDE Header */}
+              <div className="flex items-center justify-between px-4 py-2.5 bg-slate-900 border-b border-slate-800/60 select-none">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-red-500/80" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-amber-500/80" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/80" />
+                </div>
+                <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">
+                  {courseId === "bca" ? "vision.ts" : "vision.py"}
+                </span>
+                <span className={`text-[10px] font-bold ${courseId === "bca" ? "text-[#f59e0b]" : "text-blue-400"}`}>
+                  {courseId === "bca" ? "TS" : "PY"}
+                </span>
               </div>
-              <h2 className="text-xl md:text-2xl font-bold text-primary mb-4 font-sans">Our Vision</h2>
-              <p className="text-muted-foreground leading-relaxed">
-                {course.vision}
-              </p>
-            </CardContent>
-          </Card>
+              
+              {/* IDE Editor Content */}
+              <div className="p-6 text-left space-y-2 text-xs md:text-sm leading-relaxed overflow-x-auto">
+                {courseId === "bca" ? (
+                  <>
+                    <div className="flex items-start">
+                      <span className="w-6 shrink-0 select-none text-slate-600 text-right pr-2.5 font-sans">1</span>
+                      <span className="text-emerald-500 font-medium">// Indrayani Mahavidyalaya BCA Department</span>
+                    </div>
+                    <div className="flex items-start">
+                      <span className="w-6 shrink-0 select-none text-slate-600 text-right pr-2.5 font-sans">2</span>
+                      <span className="text-slate-300">
+                        <span className="text-purple-400">const</span> <span className="text-blue-400">vision</span> = <span className="text-emerald-400">"{course.vision}"</span>;
+                      </span>
+                    </div>
+                    <div className="flex items-start">
+                      <span className="w-6 shrink-0 select-none text-slate-600 text-right pr-2.5 font-sans">3</span>
+                      <span className="text-slate-300">
+                        <span className="text-purple-400">export default</span> <span className="text-blue-400">vision</span>;
+                      </span>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex items-start">
+                      <span className="w-6 shrink-0 select-none text-slate-600 text-right pr-2.5 font-sans">1</span>
+                      <span className="text-emerald-500 font-medium"># Indrayani Mahavidyalaya MCA Department</span>
+                    </div>
+                    <div className="flex items-start">
+                      <span className="w-6 shrink-0 select-none text-slate-600 text-right pr-2.5 font-sans">2</span>
+                      <span className="text-slate-300">
+                        <span className="text-blue-400">vision</span> = <span className="text-emerald-400">"{course.vision}"</span>
+                      </span>
+                    </div>
+                    <div className="flex items-start">
+                      <span className="w-6 shrink-0 select-none text-slate-600 text-right pr-2.5 font-sans">3</span>
+                      <span className="text-slate-300">
+                        <span className="text-purple-400">print</span>(<span className="text-blue-400">f</span><span className="text-emerald-400">"Vision: &#123;vision&#125;"</span>)
+                      </span>
+                    </div>
+                  </>
+                )}
+              </div>
+            </motion.div>
 
-          <Card className="border-border shadow-md">
-            <CardContent className="p-8">
-              <div className="h-12 w-12 bg-[#f59e0b]/10 rounded-xl flex items-center justify-center text-[#f59e0b] mb-6">
-                <Target className="h-6 w-6" />
+            {/* Mission Card */}
+            <motion.div
+              initial={{ opacity: 0, y: 40 }}
+              animate={crawlerComplete ? { opacity: 1, y: 0 } : undefined}
+              whileInView={!crawlerComplete ? { opacity: 1, y: 0 } : undefined}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="rounded-2xl overflow-hidden bg-slate-950 border border-slate-800 shadow-xl flex flex-col font-mono hover:border-[#f59e0b]/50 hover:shadow-[0_0_20px_rgba(245,158,11,0.15)] transition-all duration-300 group"
+            >
+              {/* IDE Header */}
+              <div className="flex items-center justify-between px-4 py-2.5 bg-slate-900 border-b border-slate-800/60 select-none">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-red-500/80" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-amber-500/80" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/80" />
+                </div>
+                <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">
+                  {courseId === "bca" ? "mission.json" : "mission.yaml"}
+                </span>
+                <span className={`text-[10px] font-bold ${courseId === "bca" ? "text-[#f59e0b]" : "text-emerald-400"}`}>
+                  {courseId === "bca" ? "JSON" : "YAML"}
+                </span>
               </div>
-              <h2 className="text-xl md:text-2xl font-bold text-primary mb-4 font-sans">Our Mission</h2>
-              <ul className="space-y-4">
-                {course.mission.map((m, idx) => (
-                  <li key={idx} className="flex gap-2.5 items-start text-muted-foreground text-sm md:text-base">
-                    <span className="text-[#f59e0b] font-bold mt-0.5">&bull;</span>
-                    <span className="leading-relaxed">{m}</span>
-                  </li>
-                ))}
-              </ul>
-            </CardContent>
-          </Card>
-        </div>
+              
+              {/* IDE Editor Content */}
+              <div className="p-6 text-left space-y-2 text-xs md:text-sm leading-relaxed overflow-x-auto">
+                {courseId === "bca" ? (
+                  <>
+                    <div className="flex items-start">
+                      <span className="w-6 shrink-0 select-none text-slate-600 text-right pr-2.5 font-sans">1</span>
+                      <span className="text-purple-400">&#123;</span>
+                    </div>
+                    <div className="flex items-start">
+                      <span className="w-6 shrink-0 select-none text-slate-600 text-right pr-2.5 font-sans">2</span>
+                      <span className="text-slate-300 pl-4">
+                        <span className="text-blue-400">"department"</span>: <span className="text-emerald-400">"Bachelor of Computer Applications"</span>,
+                      </span>
+                    </div>
+                    <div className="flex items-start">
+                      <span className="w-6 shrink-0 select-none text-slate-600 text-right pr-2.5 font-sans">3</span>
+                      <span className="text-slate-300 pl-4">
+                        <span className="text-blue-400">"mission"</span>: <span className="text-purple-400">[</span>
+                      </span>
+                    </div>
+                    {course.mission.map((m, idx) => (
+                      <div key={idx} className="flex items-start">
+                        <span className="w-6 shrink-0 select-none text-slate-600 text-right pr-2.5 font-sans">{idx + 4}</span>
+                        <span className="text-slate-300 pl-8">
+                          <span className="text-emerald-400">"{m}"</span>
+                          {idx < course.mission.length - 1 ? "," : ""}
+                        </span>
+                      </div>
+                    ))}
+                    <div className="flex items-start">
+                      <span className="w-6 shrink-0 select-none text-slate-600 text-right pr-2.5 font-sans">{course.mission.length + 4}</span>
+                      <span className="text-slate-300 pl-4">
+                        <span className="text-purple-400">]</span>
+                      </span>
+                    </div>
+                    <div className="flex items-start">
+                      <span className="w-6 shrink-0 select-none text-slate-600 text-right pr-2.5 font-sans">{course.mission.length + 5}</span>
+                      <span className="text-purple-400">&#125;</span>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex items-start">
+                      <span className="w-6 shrink-0 select-none text-slate-600 text-right pr-2.5 font-sans">1</span>
+                      <span className="text-slate-300">
+                        <span className="text-blue-400">department</span>: <span className="text-emerald-400">"Master of Computer Applications"</span>
+                      </span>
+                    </div>
+                    <div className="flex items-start">
+                      <span className="w-6 shrink-0 select-none text-slate-600 text-right pr-2.5 font-sans">2</span>
+                      <span className="text-blue-400">mission</span>:
+                    </div>
+                    {course.mission.map((m, idx) => (
+                      <div key={idx} className="flex items-start">
+                        <span className="w-6 shrink-0 select-none text-slate-600 text-right pr-2.5 font-sans">{idx + 3}</span>
+                        <span className="text-slate-300 pl-4">
+                          <span className="text-purple-400">-</span> <span className="text-emerald-400">"{m}"</span>
+                        </span>
+                      </div>
+                    ))}
+                  </>
+                )}
+              </div>
+            </motion.div>
+          </div>
+        ) : (
+          <div className="container mx-auto px-4 grid grid-cols-1 lg:grid-cols-2 gap-10">
+            <Card className="border-border shadow-md">
+              <CardContent className="p-8">
+                <div className="h-12 w-12 bg-[#f59e0b]/10 rounded-xl flex items-center justify-center text-[#f59e0b] mb-6">
+                  <Eye className="h-6 w-6" />
+                </div>
+                <h2 className="text-xl md:text-2xl font-bold text-primary mb-4 font-sans">Our Vision</h2>
+                <p className="text-muted-foreground leading-relaxed">
+                  {course.vision}
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-border shadow-md">
+              <CardContent className="p-8">
+                <div className="h-12 w-12 bg-[#f59e0b]/10 rounded-xl flex items-center justify-center text-[#f59e0b] mb-6">
+                  <Target className="h-6 w-6" />
+                </div>
+                <h2 className="text-xl md:text-2xl font-bold text-primary mb-4 font-sans">Our Mission</h2>
+                <ul className="space-y-4">
+                  {course.mission.map((m, idx) => (
+                    <li key={idx} className="flex gap-2.5 items-start text-muted-foreground text-sm md:text-base">
+                      <span className="text-[#f59e0b] font-bold mt-0.5">&bull;</span>
+                      <span className="leading-relaxed">{m}</span>
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
+          </div>
+        )}
       </section>
+
+      {/* Dynamic Dashboard Graph for BBA & MBA Pages */}
+      {(courseId === "bba" || courseId === "mba") && (
+        <CourseGraph type={courseId} />
+      )}
 
       {/* Programme Outcomes section */}
       {course.programOutcomes && (
@@ -842,21 +1077,79 @@ export default function CourseDetails({ params }: { params?: { id: string } }) {
                 }
 
                 return (
-                  <div key={idx} className="bg-slate-900/60 p-6 rounded-xl border border-slate-800/80 flex items-start gap-4 hover:border-[#f59e0b]/40 hover:bg-slate-900 transition-all duration-300">
-                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-[#f59e0b]/10 border border-[#f59e0b]/30 flex items-center justify-center text-[#f59e0b] font-bold font-mono text-sm">
-                      {idx + 1}
-                    </div>
-                    <div>
-                      {title && (
-                        <h4 className="font-bold text-slate-200 text-sm md:text-base mb-1">
-                          {title}
-                        </h4>
-                      )}
-                      <p className="text-slate-400 text-xs md:text-sm leading-relaxed">
-                        {desc}
-                      </p>
-                    </div>
-                  </div>
+                  <motion.div
+                    key={idx}
+                    initial={{ opacity: 0, y: 25 }}
+                    animate={crawlerComplete ? { opacity: 1, y: 0 } : undefined}
+                    whileInView={!crawlerComplete ? { opacity: 1, y: 0 } : undefined}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.4, delay: Math.min(idx * 0.05, 0.4) }}
+                    className={`bg-slate-900/60 p-6 rounded-xl border border-slate-800/80 flex items-start gap-4 hover:border-[#f59e0b]/40 hover:bg-slate-900 transition-all duration-300 ${
+                      courseId === "bca" || courseId === "mca"
+                        ? "bg-slate-950 border-slate-800/80 font-mono flex-col p-0 overflow-hidden shadow-lg hover:shadow-[0_0_15px_rgba(245,158,11,0.1)]"
+                        : ""
+                    }`}
+                  >
+                    {courseId === "bca" || courseId === "mca" ? (
+                      <>
+                        <div className="w-full flex items-center justify-between px-3 py-1.5 bg-slate-900 border-b border-slate-800/50 select-none">
+                          <div className="flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-red-500/80" />
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500/80" />
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500/80" />
+                          </div>
+                          <span className="text-[8px] text-slate-500 font-bold uppercase tracking-wider">
+                            {courseId === "bca" ? `outcome_${idx + 1}.sh` : `outcome_${idx + 1}.py`}
+                          </span>
+                          <span className="text-[8px] text-[#f59e0b] font-bold">
+                            {courseId === "bca" ? "SH" : "PY"}
+                          </span>
+                        </div>
+                        <div className="p-4 space-y-2 text-left w-full text-xs">
+                          <div className="flex items-center gap-1.5">
+                            {courseId === "bca" ? (
+                              <>
+                                <span className="text-amber-500 font-bold">~</span>
+                                <span className="text-[#f59e0b] font-bold">$</span>
+                                <span className="text-slate-300 font-semibold">cat outcome_{idx + 1}</span>
+                              </>
+                            ) : (
+                              <>
+                                <span className="text-blue-400 font-bold">&gt;&gt;&gt;</span>
+                                <span className="text-slate-300 font-semibold">python outcome_{idx + 1}.py</span>
+                              </>
+                            )}
+                          </div>
+                          <div className="pl-3 border-l border-slate-800 space-y-1">
+                            {title && (
+                              <div className="text-emerald-400 font-bold text-xs uppercase tracking-wider">
+                                {title}
+                              </div>
+                            )}
+                            <div className="text-slate-400 text-[11px] leading-relaxed">
+                              {desc}
+                            </div>
+                          </div>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-[#f59e0b]/10 border border-[#f59e0b]/30 flex items-center justify-center text-[#f59e0b] font-bold font-mono text-sm">
+                          {idx + 1}
+                        </div>
+                        <div>
+                          {title && (
+                            <h4 className="font-bold text-slate-200 text-sm md:text-base mb-1">
+                              {title}
+                            </h4>
+                          )}
+                          <p className="text-slate-400 text-xs md:text-sm leading-relaxed">
+                            {desc}
+                          </p>
+                        </div>
+                      </>
+                    )}
+                  </motion.div>
                 );
               })}
             </div>

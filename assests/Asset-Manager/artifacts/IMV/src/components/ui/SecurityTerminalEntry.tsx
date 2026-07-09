@@ -219,7 +219,7 @@ export default function SecurityTerminalEntry({
     };
   }, [isVisible, courseId]);
 
-  const isBCA = courseId === "bca";
+  const isBCA = courseId === "bca" || courseId === "mca";
   
   // Theme Configuration mapping
   const theme = {

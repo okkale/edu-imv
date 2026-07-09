@@ -1037,83 +1037,24 @@ export default function CourseDetails({ params }: { params?: { id: string } }) {
                 }
 
                 return (
-                  <motion.div
+                  <div
                     key={idx}
-                    initial={{ opacity: 0, y: 25 }}
-                    animate={crawlerComplete ? { opacity: 1, y: 0 } : undefined}
-                    whileInView={!crawlerComplete ? { opacity: 1, y: 0 } : undefined}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.4, delay: Math.min(idx * 0.05, 0.4) }}
-                    className={`bg-slate-900/60 p-6 rounded-xl border border-slate-800/80 flex items-start gap-4 hover:bg-slate-900 transition-all duration-300 ${
-                      courseId === "bca" || courseId === "mca"
-                        ? `bg-slate-950 border-slate-800/80 font-mono flex-col p-0 overflow-hidden shadow-lg ${
-                            courseId === "bca"
-                              ? "hover:border-[#f59e0b]/40 hover:shadow-[0_0_15px_rgba(245,158,11,0.1)]"
-                              : "hover:border-purple-500/40 hover:shadow-[0_0_15px_rgba(168,85,247,0.15)]"
-                          }`
-                        : "hover:border-[#f59e0b]/40"
-                    }`}
+                    className="bg-slate-900/60 p-6 rounded-xl border border-slate-800/80 flex items-start gap-4 hover:border-[#f59e0b]/40 hover:bg-slate-900 transition-all duration-300"
                   >
-                    {courseId === "bca" || courseId === "mca" ? (
-                      <>
-                        <div className="w-full flex items-center justify-between px-3 py-1.5 bg-slate-900 border-b border-slate-800/50 select-none">
-                          <div className="flex items-center gap-1">
-                            <span className="w-1.5 h-1.5 rounded-full bg-red-500/80" />
-                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500/80" />
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500/80" />
-                          </div>
-                          <span className="text-[8px] text-slate-500 font-bold uppercase tracking-wider">
-                            {courseId === "bca" ? `outcome_${idx + 1}.sh` : `outcome_${idx + 1}.py`}
-                          </span>
-                          <span className={`text-[8px] font-bold ${courseId === "bca" ? "text-[#f59e0b]" : "text-purple-400"}`}>
-                            {courseId === "bca" ? "SH" : "PY"}
-                          </span>
-                        </div>
-                        <div className="p-4 space-y-2 text-left w-full text-xs">
-                          <div className="flex items-center gap-1.5">
-                            {courseId === "bca" ? (
-                              <>
-                                <span className="text-amber-500 font-bold">~</span>
-                                <span className="text-[#f59e0b] font-bold">$</span>
-                                <span className="text-slate-300 font-semibold">cat outcome_{idx + 1}</span>
-                              </>
-                            ) : (
-                              <>
-                                <span className="text-blue-400 font-bold">&gt;&gt;&gt;</span>
-                                <span className="text-slate-300 font-semibold">python outcome_{idx + 1}.py</span>
-                              </>
-                            )}
-                          </div>
-                          <div className="pl-3 border-l border-slate-800 space-y-1">
-                            {title && (
-                              <div className="text-emerald-400 font-bold text-xs uppercase tracking-wider">
-                                {title}
-                              </div>
-                            )}
-                            <div className="text-slate-400 text-[11px] leading-relaxed">
-                              {desc}
-                            </div>
-                          </div>
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-[#f59e0b]/10 border border-[#f59e0b]/30 flex items-center justify-center text-[#f59e0b] font-bold font-mono text-sm">
-                          {idx + 1}
-                        </div>
-                        <div>
-                          {title && (
-                            <h4 className="font-bold text-slate-200 text-sm md:text-base mb-1">
-                              {title}
-                            </h4>
-                          )}
-                          <p className="text-slate-400 text-xs md:text-sm leading-relaxed">
-                            {desc}
-                          </p>
-                        </div>
-                      </>
-                    )}
-                  </motion.div>
+                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-[#f59e0b]/10 border border-[#f59e0b]/30 flex items-center justify-center text-[#f59e0b] font-bold font-mono text-sm">
+                      {idx + 1}
+                    </div>
+                    <div>
+                      {title && (
+                        <h4 className="font-bold text-slate-200 text-sm md:text-base mb-1">
+                          {title}
+                        </h4>
+                      )}
+                      <p className="text-slate-400 text-xs md:text-sm leading-relaxed">
+                        {desc}
+                      </p>
+                    </div>
+                  </div>
                 );
               })}
             </div>

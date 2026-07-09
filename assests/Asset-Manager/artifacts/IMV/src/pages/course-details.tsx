@@ -1044,10 +1044,14 @@ export default function CourseDetails({ params }: { params?: { id: string } }) {
                     whileInView={!crawlerComplete ? { opacity: 1, y: 0 } : undefined}
                     viewport={{ once: true }}
                     transition={{ duration: 0.4, delay: Math.min(idx * 0.05, 0.4) }}
-                    className={`bg-slate-900/60 p-6 rounded-xl border border-slate-800/80 flex items-start gap-4 hover:border-[#f59e0b]/40 hover:bg-slate-900 transition-all duration-300 ${
+                    className={`bg-slate-900/60 p-6 rounded-xl border border-slate-800/80 flex items-start gap-4 hover:bg-slate-900 transition-all duration-300 ${
                       courseId === "bca" || courseId === "mca"
-                        ? "bg-slate-950 border-slate-800/80 font-mono flex-col p-0 overflow-hidden shadow-lg hover:shadow-[0_0_15px_rgba(245,158,11,0.1)]"
-                        : ""
+                        ? `bg-slate-950 border-slate-800/80 font-mono flex-col p-0 overflow-hidden shadow-lg ${
+                            courseId === "bca"
+                              ? "hover:border-[#f59e0b]/40 hover:shadow-[0_0_15px_rgba(245,158,11,0.1)]"
+                              : "hover:border-purple-500/40 hover:shadow-[0_0_15px_rgba(168,85,247,0.15)]"
+                          }`
+                        : "hover:border-[#f59e0b]/40"
                     }`}
                   >
                     {courseId === "bca" || courseId === "mca" ? (
@@ -1061,7 +1065,7 @@ export default function CourseDetails({ params }: { params?: { id: string } }) {
                           <span className="text-[8px] text-slate-500 font-bold uppercase tracking-wider">
                             {courseId === "bca" ? `outcome_${idx + 1}.sh` : `outcome_${idx + 1}.py`}
                           </span>
-                          <span className="text-[8px] text-[#f59e0b] font-bold">
+                          <span className={`text-[8px] font-bold ${courseId === "bca" ? "text-[#f59e0b]" : "text-purple-400"}`}>
                             {courseId === "bca" ? "SH" : "PY"}
                           </span>
                         </div>

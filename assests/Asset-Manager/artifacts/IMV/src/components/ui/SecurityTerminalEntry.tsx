@@ -46,21 +46,31 @@ if (motionDetected == TRUE)
 
 const MCA_PSEUDOCODE = `--------------------------------------------------
 
-> INIT_SENSOR();
+import security_hub as sh
+import database_layer as db
 
-if motion_detected == True:
-    establish_secure_connection()
+def authenticate_and_decrypt():
+    # Initialize hardware peripherals
+    sensor = sh.MotionSensor()
+    sensor.calibrate()
     
-    user = authenticate_visitor()
-    
-    if user.status == "VERIFIED":
-        decrypt("MCA_DATABASE")
-        load_department_information()
-        render_faculty_profiles()
-        initialize_animations()
-        display_content()
-    else:
-        request_verification()
+    if sensor.is_active():
+        # Establish encrypted channel
+        channel = sh.secure_handshake()
+        user = channel.authenticate_handshake()
+        
+        if user.clearance_level >= sh.AccessLevel.VERIFIED:
+            # Decrypt course information database
+            mca_node = db.decrypt_node("MCA_DATABASE")
+            mca_node.load_curriculum_structure()
+            mca_node.render_faculty_profiles()
+            mca_node.initialize_ui_transitions()
+            
+            return mca_node.deploy_frontend()
+    return False
+
+# Execute decrypter sequence
+authenticate_and_decrypt()
 
 > EXECUTION COMPLETE
 
@@ -209,6 +219,37 @@ export default function SecurityTerminalEntry({
     };
   }, [isVisible, courseId]);
 
+  const isBCA = courseId === "bca";
+  
+  // Theme Configuration mapping
+  const theme = {
+    terminalText: isBCA ? "text-emerald-400" : "text-purple-400",
+    terminalBorder: isBCA ? "border-emerald-950/60" : "border-purple-950/60",
+    titleBarBorder: isBCA ? "border-emerald-950/40" : "border-purple-950/40",
+    titleText: isBCA ? "text-emerald-500/70" : "text-purple-500/70",
+    onlinePulse: isBCA ? "bg-emerald-500" : "bg-purple-500",
+    onlineText: isBCA ? "text-emerald-500/50" : "text-purple-500/50",
+    scrollbarThumb: isBCA ? "scrollbar-thumb-emerald-950" : "scrollbar-thumb-purple-950",
+    standbyText: isBCA ? "text-emerald-600/60" : "text-purple-600/60",
+    standbyPulse: isBCA ? "bg-emerald-500/30" : "bg-purple-500/30",
+    cursorBg: isBCA ? "bg-emerald-500" : "bg-purple-500",
+    footerStatusText: isBCA ? "text-emerald-500" : "text-purple-500",
+    footerStatusBorder: isBCA ? "border-emerald-950/30" : "border-purple-950/30",
+    unlockIconText: isBCA ? "text-emerald-400" : "text-purple-400",
+    dbDecryptedText: isBCA ? "text-emerald-400" : "text-purple-400",
+    securePingBg: isBCA ? "bg-emerald-500" : "bg-purple-500",
+    securePingText: isBCA ? "text-emerald-500" : "text-purple-500",
+    visionBarBg: isBCA ? "bg-emerald-500" : "bg-purple-500",
+    visionTitleText: isBCA ? "text-emerald-400" : "text-purple-400",
+    visionLBorder: isBCA ? "border-emerald-500/20" : "border-purple-500/20",
+    glowLeft: isBCA ? "bg-emerald-500/5" : "bg-purple-500/5",
+    glowRight: isBCA ? "bg-[#f59e0b]/5" : "bg-pink-500/5",
+    primaryAccent: isBCA ? "text-[#f59e0b]" : "text-pink-500",
+    primaryAccentBg: isBCA ? "bg-[#f59e0b]" : "bg-pink-500",
+    primaryAccentBorder: isBCA ? "border-[#f59e0b]/20" : "border-pink-500/20",
+    indicatorColor: isBCA ? "bg-emerald-500/60" : "bg-purple-500/60",
+  };
+
   return (
     <section
       ref={containerRef}
@@ -218,28 +259,28 @@ export default function SecurityTerminalEntry({
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff02_1px,transparent_1px),linear-gradient(to_bottom,#ffffff02_1px,transparent_1px)] bg-[size:30px_30px] pointer-events-none opacity-40"></div>
       
       {/* Radial glow background */}
-      <div className="absolute top-1/2 left-1/4 -translate-y-1/2 w-96 h-96 rounded-full bg-emerald-500/5 blur-[120px] pointer-events-none"></div>
-      <div className="absolute top-1/2 right-1/4 -translate-y-1/2 w-96 h-96 rounded-full bg-[#f59e0b]/5 blur-[120px] pointer-events-none"></div>
+      <div className={cn("absolute top-1/2 left-1/4 -translate-y-1/2 w-96 h-96 rounded-full blur-[120px] pointer-events-none", theme.glowLeft)}></div>
+      <div className={cn("absolute top-1/2 right-1/4 -translate-y-1/2 w-96 h-96 rounded-full blur-[120px] pointer-events-none", theme.glowRight)}></div>
 
       <div className="container mx-auto px-4 relative z-10">
         <div className="flex flex-col lg:flex-row gap-10 items-stretch">
           
           {/* Left Column: Interactive Monospaced Terminal (45%) */}
           <div className="w-full lg:w-[45%] flex flex-col justify-center">
-            <div className="w-full rounded-xl overflow-hidden bg-black border border-emerald-950/60 shadow-2xl flex flex-col font-mono text-xs md:text-sm text-emerald-400 min-h-[460px] max-h-[500px]">
+            <div className={cn("w-full rounded-xl overflow-hidden bg-black border shadow-2xl flex flex-col font-mono text-xs md:text-sm min-h-[460px] max-h-[500px]", theme.terminalBorder, theme.terminalText)}>
               
               {/* Terminal Titlebar */}
-              <div className="flex items-center justify-between px-4 py-3 bg-slate-950 border-b border-emerald-950/40 select-none">
+              <div className={cn("flex items-center justify-between px-4 py-3 bg-slate-950 border-b select-none", theme.titleBarBorder)}>
                 <div className="flex items-center gap-1.5">
                   <div className="w-3 h-3 rounded-full bg-red-500/40" />
                   <div className="w-3 h-3 rounded-full bg-amber-500/40" />
-                  <div className="w-3 h-3 rounded-full bg-emerald-500/60" />
+                  <div className={cn("w-3 h-3 rounded-full", theme.indicatorColor)} />
                 </div>
-                <div className="text-[10px] text-emerald-500/70 font-bold uppercase tracking-widest font-mono">
+                <div className={cn("text-[10px] font-bold uppercase tracking-widest font-mono", theme.titleText)}>
                   SECURITY_SHELL // {courseId.toUpperCase()}
                 </div>
-                <div className="flex items-center gap-1.5 text-[10px] text-emerald-500/50">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <div className={cn("flex items-center gap-1.5 text-[10px]", theme.onlineText)}>
+                  <span className={cn("w-1.5 h-1.5 rounded-full animate-pulse", theme.onlinePulse)} />
                   ONLINE
                 </div>
               </div>
@@ -247,28 +288,34 @@ export default function SecurityTerminalEntry({
               {/* Terminal Body */}
               <div
                 ref={terminalBodyRef}
-                className="p-5 md:p-6 space-y-2 overflow-y-auto flex-1 scrollbar-thin scrollbar-thumb-emerald-950 scrollbar-track-transparent text-left font-mono"
+                className={cn("p-5 md:p-6 space-y-2 overflow-y-auto flex-1 scrollbar-thin scrollbar-track-transparent text-left font-mono", theme.scrollbarThumb)}
               >
                 {/* Boot screen before motion detected */}
                 {bootStep === 0 && (
-                  <div className="text-emerald-600/60 italic flex items-center gap-2 font-mono">
-                    <span className="w-1.5 h-4 bg-emerald-500/30 animate-pulse inline-block" />
+                  <div className={cn("italic flex items-center gap-2 font-mono", theme.standbyText)}>
+                    <span className={cn("w-1.5 h-4 animate-pulse inline-block", theme.standbyPulse)} />
                     <span>System standby. Calibrating motion sensors...</span>
                   </div>
                 )}
 
                 {/* Animated typing logs */}
                 {terminalLines.map((line, idx) => {
-                  let lineStyle = "text-emerald-500";
+                  let lineStyle = isBCA ? "text-emerald-500" : "text-purple-500";
                   if (line.startsWith("[SYSTEM]")) {
-                    lineStyle = "text-emerald-600/70";
+                    lineStyle = isBCA ? "text-emerald-600/70" : "text-purple-600/70";
                   } else if (line.startsWith(">>>")) {
                     lineStyle = "text-[#f59e0b] font-bold tracking-widest text-sm animate-pulse my-2";
                   } else if (line.includes("EXECUTION COMPLETE")) {
                     lineStyle = "text-[#f59e0b] font-bold";
                   } else if (line.trim().startsWith(">")) {
                     lineStyle = "text-white font-semibold";
-                  } else if (line.trim().startsWith("if") || line.trim().startsWith("else")) {
+                  } else if (
+                    line.trim().startsWith("if") || 
+                    line.trim().startsWith("else") ||
+                    line.trim().startsWith("def") ||
+                    line.trim().startsWith("import") ||
+                    line.trim().startsWith("@")
+                  ) {
                     lineStyle = "text-cyan-400";
                   }
 
@@ -281,16 +328,16 @@ export default function SecurityTerminalEntry({
 
                 {/* Blinking input cursor line */}
                 {bootStep > 0 && bootStep < 5 && (
-                  <div className="flex items-center gap-1 text-emerald-400">
-                    <span className="w-1.5 h-4 bg-emerald-500 animate-pulse inline-block" />
+                  <div className={cn("flex items-center gap-1", theme.terminalText)}>
+                    <span className={cn("w-1.5 h-4 animate-pulse inline-block", theme.cursorBg)} />
                   </div>
                 )}
 
                 {/* Completed Cursor */}
                 {bootStep === 5 && (
-                  <div className="flex items-center gap-2 text-emerald-500 mt-4 pt-2 border-t border-emerald-950/30">
+                  <div className={cn("flex items-center gap-2 mt-4 pt-2 border-t", theme.footerStatusText, theme.footerStatusBorder)}>
                     <span>$ system_access --granted</span>
-                    <span className="w-1.5 h-4 bg-emerald-500 animate-pulse inline-block" />
+                    <span className={cn("w-1.5 h-4 animate-pulse inline-block", theme.cursorBg)} />
                   </div>
                 )}
               </div>
@@ -334,14 +381,14 @@ export default function SecurityTerminalEntry({
                 {/* Header panel */}
                 <div className="flex items-center justify-between border-b border-slate-800/60 pb-4">
                   <div className="flex items-center gap-2">
-                    <Unlock className="w-4 h-4 text-emerald-400" />
-                    <span className="text-xs font-mono text-emerald-400 font-bold tracking-widest uppercase">
+                    <Unlock className={cn("w-4 h-4", theme.unlockIconText)} />
+                    <span className={cn("text-xs font-mono font-bold tracking-widest uppercase", theme.dbDecryptedText)}>
                       DATABASE_DECRYPTED // {courseId.toUpperCase()}_OUT
                     </span>
                   </div>
                   <div className="flex items-center gap-1">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
-                    <span className="text-[10px] text-emerald-500 font-mono font-bold tracking-wider">SECURE</span>
+                    <span className={cn("w-2 h-2 rounded-full animate-ping", theme.securePingBg)} />
+                    <span className={cn("text-[10px] font-mono font-bold tracking-wider", theme.securePingText)}>SECURE</span>
                   </div>
                 </div>
 
@@ -358,7 +405,7 @@ export default function SecurityTerminalEntry({
                     <h3 className="text-2xl md:text-3xl font-extrabold text-white tracking-tight leading-tight">
                       {courseName}
                     </h3>
-                    <p className="text-xs font-mono text-[#f59e0b] mt-1 uppercase tracking-wider">
+                    <p className={cn("text-xs font-mono mt-1 uppercase tracking-wider", theme.primaryAccent)}>
                       Academic Scope: {duration} / Intake Capacity: {intake} Seats
                     </p>
                   </motion.div>
@@ -370,11 +417,11 @@ export default function SecurityTerminalEntry({
                     transition={{ duration: 0.6, ease: "easeOut", delay: 0.5 }}
                     className="space-y-2 text-left"
                   >
-                    <h4 className="text-xs font-bold font-mono text-emerald-400 flex items-center gap-2 uppercase tracking-wider">
-                      <span className="w-1 h-3 bg-emerald-500 inline-block" />
+                    <h4 className={cn("text-xs font-bold font-mono flex items-center gap-2 uppercase tracking-wider", theme.visionTitleText)}>
+                      <span className={cn("w-1 h-3 inline-block", theme.visionBarBg)} />
                       Department Vision
                     </h4>
-                    <p className="text-slate-300 text-xs md:text-sm leading-relaxed pl-3 border-l border-emerald-500/20 font-sans">
+                    <p className={cn("text-slate-300 text-xs md:text-sm leading-relaxed pl-3 border-l font-sans", theme.visionLBorder)}>
                       {vision}
                     </p>
                   </motion.div>
@@ -386,14 +433,14 @@ export default function SecurityTerminalEntry({
                     transition={{ duration: 0.6, ease: "easeOut", delay: 0.8 }}
                     className="space-y-2 text-left"
                   >
-                    <h4 className="text-xs font-bold font-mono text-[#f59e0b] flex items-center gap-2 uppercase tracking-wider">
-                      <span className="w-1 h-3 bg-[#f59e0b] inline-block" />
+                    <h4 className={cn("text-xs font-bold font-mono flex items-center gap-2 uppercase tracking-wider", theme.primaryAccent)}>
+                      <span className={cn("w-1 h-3 inline-block", theme.primaryAccentBg)} />
                       Mission Protocols
                     </h4>
-                    <ul className="space-y-2 pl-3 border-l border-[#f59e0b]/20 font-sans">
+                    <ul className={cn("space-y-2 pl-3 border-l font-sans", theme.primaryAccentBorder)}>
                       {mission.map((m, idx) => (
                         <li key={idx} className="text-slate-300 text-xs md:text-sm leading-relaxed flex items-start gap-2">
-                          <span className="text-[#f59e0b] font-bold mt-0.5">&bull;</span>
+                          <span className={cn("font-bold mt-0.5", theme.primaryAccent)}>&bull;</span>
                           <span>{m}</span>
                         </li>
                       ))}

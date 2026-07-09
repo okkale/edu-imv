@@ -9,6 +9,8 @@ export interface TerminalProps {
   onComplete?: () => void;
   className?: string;
   loop?: boolean;
+  active?: boolean;
+  standbyMessage?: string;
 }
 
 export function Terminal({
@@ -19,6 +21,8 @@ export function Terminal({
   onComplete,
   className,
   loop = true,
+  active = true,
+  standbyMessage = "System standby. Waiting for motion sensor scan...",
 }: TerminalProps) {
   const [history, setHistory] = React.useState<{ type: "cmd" | "output"; text: string }[]>([]);
   const [currentCmdIndex, setCurrentCmdIndex] = React.useState(0);
@@ -34,15 +38,24 @@ export function Terminal({
     setIsTyping(false);
   };
 
+  // Reset if active turns false
+  React.useEffect(() => {
+    if (!active) {
+      handleReset();
+    }
+  }, [active]);
+
   const timeoutRef = React.useRef<any>(null);
 
   React.useEffect(() => {
+    if (!active) return;
+
     if (currentCmdIndex >= commands.length) {
       if (onComplete) onComplete();
       if (loop) {
         const timeout = setTimeout(() => {
           handleReset();
-        }, 5000); // Wait 5 seconds before restarting
+        }, 8000); // Wait 8 seconds before restarting when looping
         return () => clearTimeout(timeout);
       }
       return;
@@ -85,7 +98,7 @@ export function Terminal({
       clearInterval(interval);
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
-  }, [currentCmdIndex, commands, outputs, typingSpeed, delayBetweenCommands, loop]);
+  }, [currentCmdIndex, commands, outputs, typingSpeed, delayBetweenCommands, loop, active]);
 
   // Auto-scroll to bottom
   React.useEffect(() => {
@@ -127,8 +140,15 @@ export function Terminal({
         ref={containerRef}
         className="p-5 md:p-6 space-y-3 overflow-y-auto max-h-[320px] scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent text-left"
       >
+        {!active && (
+          <div className="text-slate-500 italic flex items-center gap-2">
+            <span className="w-1.5 h-4 bg-slate-600 animate-pulse inline-block" />
+            <span>{standbyMessage}</span>
+          </div>
+        )}
+
         {/* Command History */}
-        {history.map((line, idx) => (
+        {active && history.map((line, idx) => (
           <div key={idx} className="space-y-1.5">
             {line.type === "cmd" ? (
               <div className="flex items-start gap-2 text-slate-200">
@@ -152,7 +172,7 @@ export function Terminal({
         ))}
 
         {/* Current Command Input Line */}
-        {currentCmdIndex < commands.length && (
+        {active && currentCmdIndex < commands.length && (
           <div className="flex items-center gap-2">
             <span className="text-amber-500 font-bold">~</span>
             <span className="text-[#f59e0b] font-bold">$</span>

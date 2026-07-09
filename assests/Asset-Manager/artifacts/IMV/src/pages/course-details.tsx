@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useRoute, Link } from "wouter";
 import { useGetFaculty } from "@workspace/api-client-react";
@@ -25,11 +25,13 @@ import {
   BookMarked,
   Briefcase,
   GraduationCap,
-  Sparkles
+  Sparkles,
+  Lock
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Terminal } from "@/components/ui/terminal";
 import CourseGraph from "@/components/ui/course-graph";
+import SecurityTerminalEntry from "@/components/ui/SecurityTerminalEntry";
 
 // Types
 interface Subject {
@@ -612,6 +614,51 @@ const COURSE_DATA: Record<string, CourseInfo> = {
   }
 };
 
+interface LockedTerminalWrapperProps {
+  isUnlocked: boolean;
+  isVisible: boolean;
+  title?: string;
+  standbyText?: string;
+  children: React.ReactNode;
+}
+
+function LockedTerminalWrapper({
+  isUnlocked,
+  isVisible,
+  title = "TERMINAL SHELL SECURELY LOCKED",
+  standbyText = "INITIALIZING MOTION DETECTION STREAM...",
+  children
+}: LockedTerminalWrapperProps) {
+  return (
+    <div className="relative rounded-2xl overflow-hidden shadow-2xl">
+      <AnimatePresence>
+        {!isUnlocked && (
+          <motion.div
+            initial={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5 }}
+            className="absolute inset-0 bg-slate-950/95 backdrop-blur-md z-30 flex flex-col items-center justify-center p-6 text-center border border-red-500/20"
+          >
+            <div className="w-12 h-12 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center text-red-500 mb-3 animate-pulse">
+              <Lock className="w-5 h-5" />
+            </div>
+            <div className="text-red-400 font-mono text-xs tracking-widest font-bold uppercase mb-1">
+              [ {title} ]
+            </div>
+            <p className="text-slate-500 text-[10px] font-mono max-w-md">
+              {isVisible 
+                ? "DECRYPTING CORE MODULES... SECURE HANDSHAKE IN PROGRESS."
+                : standbyText
+              }
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      {children}
+    </div>
+  );
+}
+
 export default function CourseDetails({ params }: { params?: { id: string } }) {
   const [, routeParams] = useRoute("/courses/:id");
   const courseId = params?.id || routeParams?.id;
@@ -619,6 +666,53 @@ export default function CourseDetails({ params }: { params?: { id: string } }) {
 
   const [activeTab, setActiveTab] = useState<"faculty" | "academics" | "syllabus" | "calendar">("faculty");
   const [crawlerComplete, setCrawlerComplete] = useState<boolean>(false);
+
+  // States for Hero terminal unlock sequence
+  const [isHeroUnlocked, setIsHeroUnlocked] = useState<boolean>(false);
+  const [isHeroVisible, setIsHeroVisible] = useState<boolean>(false);
+
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (courseId === "bca" || courseId === "mca") {
+      setIsHeroVisible(true);
+      timer = setTimeout(() => {
+        setIsHeroUnlocked(true);
+      }, 1500); // Auto unlock Hero terminal after 1.5s
+    }
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [courseId]);
+
+  // States for cinematic terminal scroll-trigger and decryption
+  const cinematicSectionRef = useRef<HTMLDivElement>(null);
+  const [isCinematicSectionVisible, setIsCinematicSectionVisible] = useState<boolean>(false);
+  const [isCinematicUnlocked, setIsCinematicUnlocked] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (courseId !== "bca" && courseId !== "mca") return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsCinematicSectionVisible(true);
+        } else {
+          // Reset entire state to step 1 when scrolled entirely out of view
+          setIsCinematicSectionVisible(false);
+          setIsCinematicUnlocked(false);
+        }
+      },
+      {
+        threshold: 0.1, // Trigger when 10% of the section is visible
+      }
+    );
+
+    if (cinematicSectionRef.current) {
+      observer.observe(cinematicSectionRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, [courseId]);
 
   // States for Academics Tab Tree diagram
   const [isTreeExpanded, setIsTreeExpanded] = useState<boolean>(false);
@@ -742,54 +836,70 @@ export default function CourseDetails({ params }: { params?: { id: string } }) {
             </p>
             {courseId === "bca" && (
               <div className="mt-8 animate-in fade-in duration-500">
-                <Terminal
-                  commands={[
-                    "atul-crawler --target=bca",
-                    "fetch --url=edu-imv.vercel.app/courses/bca",
-                    "render --layout"
-                  ]}
-                  outputs={{
-                    0: [
-                      "✔ Connected to Indrayani Mahavidyalaya database...",
-                      "✔ Target: BCA (3 Years)"
-                    ],
-                    1: [
-                      "✔ Extracted 6 Semesters: Programming, Databases, Web Frameworks."
-                    ],
-                    2: [
-                      " [SUCCESS] BCA Course Layout Rendered Live."
-                    ]
-                  }}
-                  typingSpeed={45}
-                  delayBetweenCommands={1000}
-                  onComplete={() => setCrawlerComplete(true)}
-                />
+                <LockedTerminalWrapper
+                  isUnlocked={isHeroUnlocked}
+                  isVisible={isHeroVisible}
+                  title="CRAWLER GATEWAY SECURED"
+                  standbyText="ESTABLISHING SECURE DATABASE HANDSHAKE..."
+                >
+                  <Terminal
+                    active={isHeroUnlocked}
+                    commands={[
+                      "atul-crawler --target=bca",
+                      "fetch --url=edu-imv.vercel.app/courses/bca",
+                      "render --layout"
+                    ]}
+                    outputs={{
+                      0: [
+                        "✔ Connected to Indrayani Mahavidyalaya database...",
+                        "✔ Target: BCA (3 Years)"
+                      ],
+                      1: [
+                        "✔ Extracted 6 Semesters: Programming, Databases, Web Frameworks."
+                      ],
+                      2: [
+                        " [SUCCESS] BCA Course Layout Rendered Live."
+                      ]
+                    }}
+                    typingSpeed={45}
+                    delayBetweenCommands={1000}
+                    onComplete={() => setCrawlerComplete(true)}
+                  />
+                </LockedTerminalWrapper>
               </div>
             )}
             {courseId === "mca" && (
               <div className="mt-8 animate-in fade-in duration-500">
-                <Terminal
-                  commands={[
-                    "atul-crawler --target=mca",
-                    "fetch --url=edu-imv.vercel.app/courses/mca",
-                    "deploy --env=production"
-                  ]}
-                  outputs={{
-                    0: [
-                      "✔ Connected to Indrayani Mahavidyalaya database...",
-                      "✔ Target: MCA (2 Years)"
-                    ],
-                    1: [
-                      "✔ Extracted 4 Semesters: Cloud Architectures, Machine Learning, DevOps."
-                    ],
-                    2: [
-                      " [SUCCESS] Production MCA Environment Deployed and Rendered."
-                    ]
-                  }}
-                  typingSpeed={45}
-                  delayBetweenCommands={1000}
-                  onComplete={() => setCrawlerComplete(true)}
-                />
+                <LockedTerminalWrapper
+                  isUnlocked={isHeroUnlocked}
+                  isVisible={isHeroVisible}
+                  title="CRAWLER GATEWAY SECURED"
+                  standbyText="ESTABLISHING SECURE DATABASE HANDSHAKE..."
+                >
+                  <Terminal
+                    active={isHeroUnlocked}
+                    commands={[
+                      "atul-crawler --target=mca",
+                      "fetch --url=edu-imv.vercel.app/courses/mca",
+                      "deploy --env=production"
+                    ]}
+                    outputs={{
+                      0: [
+                        "✔ Connected to Indrayani Mahavidyalaya database...",
+                        "✔ Target: MCA (2 Years)"
+                      ],
+                      1: [
+                        "✔ Extracted 4 Semesters: Cloud Architectures, Machine Learning, DevOps."
+                      ],
+                      2: [
+                        " [SUCCESS] Production MCA Environment Deployed and Rendered."
+                      ]
+                    }}
+                    typingSpeed={45}
+                    delayBetweenCommands={1000}
+                    onComplete={() => setCrawlerComplete(true)}
+                  />
+                </LockedTerminalWrapper>
               </div>
             )}
           </div>
@@ -844,167 +954,17 @@ export default function CourseDetails({ params }: { params?: { id: string } }) {
       </section>
 
       {/* Vision & Mission section */}
-      <section className="py-16 bg-background">
-        {courseId === "bca" || courseId === "mca" ? (
-          <div className="container mx-auto px-4 grid grid-cols-1 lg:grid-cols-2 gap-10">
-            {/* Vision Card */}
-            <motion.div
-              initial={{ opacity: 0, y: 40 }}
-              animate={crawlerComplete ? { opacity: 1, y: 0 } : undefined}
-              whileInView={!crawlerComplete ? { opacity: 1, y: 0 } : undefined}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-              className="rounded-2xl overflow-hidden bg-slate-950 border border-slate-800 shadow-xl flex flex-col font-mono hover:border-[#f59e0b]/50 hover:shadow-[0_0_20px_rgba(245,158,11,0.15)] transition-all duration-300 group"
-            >
-              {/* IDE Header */}
-              <div className="flex items-center justify-between px-4 py-2.5 bg-slate-900 border-b border-slate-800/60 select-none">
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-red-500/80" />
-                  <span className="w-2.5 h-2.5 rounded-full bg-amber-500/80" />
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/80" />
-                </div>
-                <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">
-                  {courseId === "bca" ? "vision.ts" : "vision.py"}
-                </span>
-                <span className={`text-[10px] font-bold ${courseId === "bca" ? "text-[#f59e0b]" : "text-blue-400"}`}>
-                  {courseId === "bca" ? "TS" : "PY"}
-                </span>
-              </div>
-              
-              {/* IDE Editor Content */}
-              <div className="p-6 text-left space-y-2 text-xs md:text-sm leading-relaxed overflow-x-auto">
-                {courseId === "bca" ? (
-                  <>
-                    <div className="flex items-start">
-                      <span className="w-6 shrink-0 select-none text-slate-600 text-right pr-2.5 font-sans">1</span>
-                      <span className="text-emerald-500 font-medium">// Indrayani Mahavidyalaya BCA Department</span>
-                    </div>
-                    <div className="flex items-start">
-                      <span className="w-6 shrink-0 select-none text-slate-600 text-right pr-2.5 font-sans">2</span>
-                      <span className="text-slate-300">
-                        <span className="text-purple-400">const</span> <span className="text-blue-400">vision</span> = <span className="text-emerald-400">"{course.vision}"</span>;
-                      </span>
-                    </div>
-                    <div className="flex items-start">
-                      <span className="w-6 shrink-0 select-none text-slate-600 text-right pr-2.5 font-sans">3</span>
-                      <span className="text-slate-300">
-                        <span className="text-purple-400">export default</span> <span className="text-blue-400">vision</span>;
-                      </span>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="flex items-start">
-                      <span className="w-6 shrink-0 select-none text-slate-600 text-right pr-2.5 font-sans">1</span>
-                      <span className="text-emerald-500 font-medium"># Indrayani Mahavidyalaya MCA Department</span>
-                    </div>
-                    <div className="flex items-start">
-                      <span className="w-6 shrink-0 select-none text-slate-600 text-right pr-2.5 font-sans">2</span>
-                      <span className="text-slate-300">
-                        <span className="text-blue-400">vision</span> = <span className="text-emerald-400">"{course.vision}"</span>
-                      </span>
-                    </div>
-                    <div className="flex items-start">
-                      <span className="w-6 shrink-0 select-none text-slate-600 text-right pr-2.5 font-sans">3</span>
-                      <span className="text-slate-300">
-                        <span className="text-purple-400">print</span>(<span className="text-blue-400">f</span><span className="text-emerald-400">"Vision: &#123;vision&#125;"</span>)
-                      </span>
-                    </div>
-                  </>
-                )}
-              </div>
-            </motion.div>
-
-            {/* Mission Card */}
-            <motion.div
-              initial={{ opacity: 0, y: 40 }}
-              animate={crawlerComplete ? { opacity: 1, y: 0 } : undefined}
-              whileInView={!crawlerComplete ? { opacity: 1, y: 0 } : undefined}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="rounded-2xl overflow-hidden bg-slate-950 border border-slate-800 shadow-xl flex flex-col font-mono hover:border-[#f59e0b]/50 hover:shadow-[0_0_20px_rgba(245,158,11,0.15)] transition-all duration-300 group"
-            >
-              {/* IDE Header */}
-              <div className="flex items-center justify-between px-4 py-2.5 bg-slate-900 border-b border-slate-800/60 select-none">
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-red-500/80" />
-                  <span className="w-2.5 h-2.5 rounded-full bg-amber-500/80" />
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/80" />
-                </div>
-                <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">
-                  {courseId === "bca" ? "mission.json" : "mission.yaml"}
-                </span>
-                <span className={`text-[10px] font-bold ${courseId === "bca" ? "text-[#f59e0b]" : "text-emerald-400"}`}>
-                  {courseId === "bca" ? "JSON" : "YAML"}
-                </span>
-              </div>
-              
-              {/* IDE Editor Content */}
-              <div className="p-6 text-left space-y-2 text-xs md:text-sm leading-relaxed overflow-x-auto">
-                {courseId === "bca" ? (
-                  <>
-                    <div className="flex items-start">
-                      <span className="w-6 shrink-0 select-none text-slate-600 text-right pr-2.5 font-sans">1</span>
-                      <span className="text-purple-400">&#123;</span>
-                    </div>
-                    <div className="flex items-start">
-                      <span className="w-6 shrink-0 select-none text-slate-600 text-right pr-2.5 font-sans">2</span>
-                      <span className="text-slate-300 pl-4">
-                        <span className="text-blue-400">"department"</span>: <span className="text-emerald-400">"Bachelor of Computer Applications"</span>,
-                      </span>
-                    </div>
-                    <div className="flex items-start">
-                      <span className="w-6 shrink-0 select-none text-slate-600 text-right pr-2.5 font-sans">3</span>
-                      <span className="text-slate-300 pl-4">
-                        <span className="text-blue-400">"mission"</span>: <span className="text-purple-400">[</span>
-                      </span>
-                    </div>
-                    {course.mission.map((m, idx) => (
-                      <div key={idx} className="flex items-start">
-                        <span className="w-6 shrink-0 select-none text-slate-600 text-right pr-2.5 font-sans">{idx + 4}</span>
-                        <span className="text-slate-300 pl-8">
-                          <span className="text-emerald-400">"{m}"</span>
-                          {idx < course.mission.length - 1 ? "," : ""}
-                        </span>
-                      </div>
-                    ))}
-                    <div className="flex items-start">
-                      <span className="w-6 shrink-0 select-none text-slate-600 text-right pr-2.5 font-sans">{course.mission.length + 4}</span>
-                      <span className="text-slate-300 pl-4">
-                        <span className="text-purple-400">]</span>
-                      </span>
-                    </div>
-                    <div className="flex items-start">
-                      <span className="w-6 shrink-0 select-none text-slate-600 text-right pr-2.5 font-sans">{course.mission.length + 5}</span>
-                      <span className="text-purple-400">&#125;</span>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="flex items-start">
-                      <span className="w-6 shrink-0 select-none text-slate-600 text-right pr-2.5 font-sans">1</span>
-                      <span className="text-slate-300">
-                        <span className="text-blue-400">department</span>: <span className="text-emerald-400">"Master of Computer Applications"</span>
-                      </span>
-                    </div>
-                    <div className="flex items-start">
-                      <span className="w-6 shrink-0 select-none text-slate-600 text-right pr-2.5 font-sans">2</span>
-                      <span className="text-blue-400">mission</span>:
-                    </div>
-                    {course.mission.map((m, idx) => (
-                      <div key={idx} className="flex items-start">
-                        <span className="w-6 shrink-0 select-none text-slate-600 text-right pr-2.5 font-sans">{idx + 3}</span>
-                        <span className="text-slate-300 pl-4">
-                          <span className="text-purple-400">-</span> <span className="text-emerald-400">"{m}"</span>
-                        </span>
-                      </div>
-                    ))}
-                  </>
-                )}
-              </div>
-            </motion.div>
-          </div>
-        ) : (
+      {courseId === "bca" || courseId === "mca" ? (
+        <SecurityTerminalEntry
+          courseId={courseId}
+          courseName={course.name}
+          vision={course.vision}
+          mission={course.mission}
+          duration={course.duration}
+          intake={course.intake}
+        />
+      ) : (
+        <section className="py-16 bg-background">
           <div className="container mx-auto px-4 grid grid-cols-1 lg:grid-cols-2 gap-10">
             <Card className="border-border shadow-md">
               <CardContent className="p-8">
@@ -1035,8 +995,8 @@ export default function CourseDetails({ params }: { params?: { id: string } }) {
               </CardContent>
             </Card>
           </div>
-        )}
-      </section>
+        </section>
+      )}
 
       {/* Dynamic Dashboard Graph for BBA & MBA Pages */}
       {(courseId === "bba" || courseId === "mba") && (

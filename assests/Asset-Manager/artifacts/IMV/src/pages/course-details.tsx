@@ -59,8 +59,7 @@ interface CourseInfo {
   shortName: string;
   duration: string;
   intake: number;
-  choiceCode: string;
-  choiceCodeTfws: string;
+  dteCode: string;
   dbDeptName: string;
   summary: string;
   vision: string;
@@ -81,8 +80,7 @@ const COURSE_DATA: Record<string, CourseInfo> = {
     shortName: "BCA",
     duration: "3 Years",
     intake: 120,
-    choiceCode: "1617399510",
-    choiceCodeTfws: "1617399511T",
+    dteCode: "16173",
     dbDeptName: "Computer Applications",
     summary: "The BCA program provides a strong foundation in computer applications, programming language logic, database design, software engineering methodologies, web technology frameworks, and networking architectures. Aligned with Savitribai Phule Pune University (SPPU), it prepares students for careers in software development, cloud systems administration, and data intelligence services.",
     vision: "To be a recognized center of excellence in computer applications, nurturing technically proficient, innovative, and ethically accountable IT professionals to fulfill global industry demands.",
@@ -247,8 +245,7 @@ const COURSE_DATA: Record<string, CourseInfo> = {
     shortName: "BBA",
     duration: "3 Years",
     intake: 180,
-    choiceCode: "1617324210",
-    choiceCodeTfws: "1617324211T",
+    dteCode: "16173",
     dbDeptName: "Management Studies",
     summary: "The BBA program focuses on business administration fundamentals, financial management, retail, human resource operations, market logistics, and strategic entrepreneurship. Designed under SPPU guidelines, it fosters critical thinking, business modeling, and communications.",
     vision: "To cultivate business leaders, administrators, and entrepreneurs with a global management outlook, value-oriented ethics, and business agility.",
@@ -401,8 +398,7 @@ const COURSE_DATA: Record<string, CourseInfo> = {
     shortName: "MCA",
     duration: "2 Years",
     intake: 60,
-    choiceCode: "1617324610",
-    choiceCodeTfws: "1617324611T",
+    dteCode: "16173",
     dbDeptName: "Computer Applications",
     summary: "The MCA program focuses on advanced computing frameworks, cloud engineering systems, large database handling, machine learning algorithms, and secure software development lifecycles. Following the modern 2-year structure, it prepares graduates for advanced software engineering and technical manager roles.",
     vision: "To lead in computing education and research, fostering advanced software engineers and tech innovators who solve industrial challenges.",
@@ -508,8 +504,7 @@ const COURSE_DATA: Record<string, CourseInfo> = {
     shortName: "MBA",
     duration: "2 Years",
     intake: 60,
-    choiceCode: "1617337210",
-    choiceCodeTfws: "1617337211T",
+    dteCode: "16173",
     dbDeptName: "Management Studies",
     summary: "The MBA program prepares future leaders and managers through advanced studies in marketing, finance, human resources, operations, business analytics, and strategic management. The program emphasizes leadership development, decision-making skills, industry exposure, internships, and real-world business applications.",
     vision: "To be a leading business school that nurtures innovative corporate leaders, strategists, and ethical managers who drive sustainable organizational growth and societal progress.",
@@ -730,7 +725,7 @@ export default function CourseDetails({ params }: { params?: { id: string } }) {
       {/* Info Stats Grid */}
       <section className="py-6 border-b border-border/80 bg-muted/20">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="bg-white p-5 rounded-xl border border-border shadow-sm flex items-center gap-4">
               <div className="w-10 h-10 rounded-lg bg-[#f59e0b]/10 flex items-center justify-center text-[#f59e0b]">
                 <Clock className="w-5 h-5" />
@@ -756,18 +751,8 @@ export default function CourseDetails({ params }: { params?: { id: string } }) {
                 <BookOpen className="w-5 h-5" />
               </div>
               <div>
-                <span className="text-xs text-muted-foreground uppercase tracking-wider block font-medium">Choice Code</span>
-                <span className="text-sm md:text-base font-bold text-primary font-mono">{course.choiceCode}</span>
-              </div>
-            </div>
-
-            <div className="bg-white p-5 rounded-xl border border-border shadow-sm flex items-center gap-4">
-              <div className="w-10 h-10 rounded-lg bg-[#f59e0b]/10 flex items-center justify-center text-[#f59e0b]">
-                <Award className="w-5 h-5" />
-              </div>
-              <div>
-                <span className="text-xs text-muted-foreground uppercase tracking-wider block font-medium">TFWS Code</span>
-                <span className="text-sm md:text-base font-bold text-primary font-mono">{course.choiceCodeTfws}</span>
+                <span className="text-xs text-muted-foreground uppercase tracking-wider block font-medium">DTE Code</span>
+                <span className="text-sm md:text-base font-bold text-primary font-mono">{course.dteCode}</span>
               </div>
             </div>
           </div>

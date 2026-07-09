@@ -35,14 +35,24 @@ export default function Faculty() {
   const [selectedMember, setSelectedMember] = useState<any | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>("");
   
-  const { data: facultyMembersData, isLoading } = useGetFaculty(
-    selectedDept !== "All" ? { department: selectedDept } : undefined
-  );
+  const { data: facultyMembersData, isLoading } = useGetFaculty();
   
   const facultyMembers = Array.isArray(facultyMembersData) ? facultyMembersData : [];
   
+  // Filter by department mappings to support both new and old names
+  const deptFilteredFaculty = facultyMembers.filter((f) => {
+    if (selectedDept === "All") return true;
+    if (selectedDept === "BCA" || selectedDept === "MCA") {
+      return f.department === "Computer Applications" || f.department === "BCA" || f.department === "MCA";
+    }
+    if (selectedDept === "BBA" || selectedDept === "MBA") {
+      return f.department === "Management Studies" || f.department === "BBA" || f.department === "MBA";
+    }
+    return f.department === selectedDept;
+  });
+  
   // Sort faculty: HODs first
-  const sortedFaculty = facultyMembers.length > 0 ? [...facultyMembers].sort((a, b) => {
+  const sortedFaculty = deptFilteredFaculty.length > 0 ? [...deptFilteredFaculty].sort((a, b) => {
     if (a.isHOD && !b.isHOD) return -1;
     if (!a.isHOD && b.isHOD) return 1;
     return 0;

@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useGetCourses, getGetCoursesQueryKey, useCreateCourse, useDeleteCourse } from "@workspace/api-client-react";
+import { useState, useEffect } from "react";
+import { useGetCourses, getGetCoursesQueryKey, useCreateCourse, useDeleteCourse, useUpdateCourse } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { DEPARTMENTS } from "@/lib/departments";
 
 const courseSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -34,32 +35,68 @@ export function CoursesManager() {
   const { toast } = useToast();
   const deleteCourse = useDeleteCourse();
   const createCourse = useCreateCourse();
+  const updateCourse = useUpdateCourse();
   const [open, setOpen] = useState(false);
+  const [editingCourse, setEditingCourse] = useState<any>(null);
+
+  const defaultValues = {
+    name: "",
+    department: DEPARTMENTS[0].label,
+    type: "UG",
+    duration: "3 Years",
+    seats: 60,
+    isActive: true,
+  };
 
   const form = useForm<z.infer<typeof courseSchema>>({
     resolver: zodResolver(courseSchema),
-    defaultValues: {
-      name: "",
-      department: "BBA",
-      type: "UG",
-      duration: "3 Years",
-      seats: 60,
-      isActive: true,
-    }
+    defaultValues
   });
 
-  const onSubmit = (data: z.infer<typeof courseSchema>) => {
-    createCourse.mutate({ data }, {
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: getGetCoursesQueryKey() });
-        toast({ title: "Course added successfully" });
-        setOpen(false);
-        form.reset();
-      },
-      onError: () => {
-        toast({ variant: "destructive", title: "Failed to add course" });
-      }
+  useEffect(() => {
+    if (!open) {
+      setEditingCourse(null);
+      form.reset(defaultValues);
+    }
+  }, [open, form]);
+
+  const handleEdit = (course: any) => {
+    setEditingCourse(course);
+    form.reset({
+      name: course.name,
+      department: course.department,
+      type: course.type,
+      duration: course.duration,
+      seats: course.seats,
+      isActive: course.isActive,
     });
+    setOpen(true);
+  };
+
+  const onSubmit = (data: z.infer<typeof courseSchema>) => {
+    if (editingCourse) {
+      updateCourse.mutate({ id: editingCourse.id, data }, {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getGetCoursesQueryKey() });
+          toast({ title: "Course updated successfully" });
+          setOpen(false);
+        },
+        onError: () => {
+          toast({ variant: "destructive", title: "Failed to update course" });
+        }
+      });
+    } else {
+      createCourse.mutate({ data }, {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getGetCoursesQueryKey() });
+          toast({ title: "Course added successfully" });
+          setOpen(false);
+        },
+        onError: () => {
+          toast({ variant: "destructive", title: "Failed to add course" });
+        }
+      });
+    }
   };
 
   const handleDelete = (id: number) => {
@@ -86,7 +123,7 @@ export function CoursesManager() {
           </DialogTrigger>
           <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>Add New Course</DialogTitle>
+              <DialogTitle>{editingCourse ? "Edit Course" : "Add New Course"}</DialogTitle>
             </DialogHeader>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -94,16 +131,15 @@ export function CoursesManager() {
                   <FormItem><FormLabel>Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage/></FormItem>
                 )} />
                 <div className="grid grid-cols-2 gap-4">
-                  <FormField control={form.control} name="department" render={({ field }) => (
+                   <FormField control={form.control} name="department" render={({ field }) => (
                     <FormItem>
                       <FormLabel>Department</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
                         <FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl>
                         <SelectContent>
-                          <SelectItem value="BBA">BBA</SelectItem>
-                          <SelectItem value="BCA">BCA</SelectItem>
-                          <SelectItem value="MBA">MBA</SelectItem>
-                          <SelectItem value="MCA">MCA</SelectItem>
+                          {DEPARTMENTS.map((dept) => (
+                            <SelectItem key={dept.id} value={dept.label}>{dept.label}</SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                       <FormMessage/>
@@ -131,8 +167,8 @@ export function CoursesManager() {
                     <FormItem><FormLabel>Seats</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage/></FormItem>
                   )} />
                 </div>
-                <Button type="submit" className="w-full" disabled={createCourse.isPending}>
-                  {createCourse.isPending ? "Saving..." : "Save Course"}
+                <Button type="submit" className="w-full" disabled={createCourse.isPending || updateCourse.isPending}>
+                  {createCourse.isPending || updateCourse.isPending ? "Saving..." : (editingCourse ? "Update Course" : "Save Course")}
                 </Button>
               </form>
             </Form>
@@ -170,7 +206,14 @@ export function CoursesManager() {
                   <TableCell>{course.type}</TableCell>
                   <TableCell>{course.seats}</TableCell>
                   <TableCell className="text-right">
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDelete(course.id)}><Trash2 className="h-4 w-4" /></Button>
+                    <div className="flex justify-end gap-2">
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600" onClick={() => handleEdit(course)}>
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDelete(course.id)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))

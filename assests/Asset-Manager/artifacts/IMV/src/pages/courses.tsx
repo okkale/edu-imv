@@ -10,8 +10,7 @@ const ACADEMIC_PROGRAMS = [
     program: "B.C.A.",
     name: "Bachelor of Computer Applications",
     intake: "120",
-    choiceCode: "1617399510",
-    choiceCodeTfws: "1617399511T",
+    dteCode: "16173",
     icon: Laptop,
     description: "A three-year undergraduate course specializing in computer applications, logic building, software development, and modern web frameworks.",
     color: "from-blue-500/10 to-indigo-500/10",
@@ -22,8 +21,7 @@ const ACADEMIC_PROGRAMS = [
     program: "B.B.A.",
     name: "Bachelor of Business Administration",
     intake: "180",
-    choiceCode: "1617324210",
-    choiceCodeTfws: "1617324211T",
+    dteCode: "16173",
     icon: Briefcase,
     description: "A three-year undergraduate management course focusing on business administration principles, corporate finance, marketing, and leadership skills.",
     color: "from-orange-500/10 to-amber-500/10",
@@ -34,8 +32,7 @@ const ACADEMIC_PROGRAMS = [
     program: "M.C.A.",
     name: "Master of Computer Applications",
     intake: "60",
-    choiceCode: "1617324610",
-    choiceCodeTfws: "1617324611T",
+    dteCode: "16173",
     icon: BrainCircuit,
     description: "A two-year postgraduate degree covering advanced computer science, cloud architectures, database engineering, and machine learning models.",
     color: "from-purple-500/10 to-pink-500/10",
@@ -46,8 +43,7 @@ const ACADEMIC_PROGRAMS = [
     program: "M.B.A.",
     name: "Master of Business Administration",
     intake: "60",
-    choiceCode: "1617337210",
-    choiceCodeTfws: "1617337211T",
+    dteCode: "16173",
     icon: Users,
     description: "A two-year postgraduate management course designed for developing corporate strategists, managers, and entrepreneurs with global vision.",
     color: "from-teal-500/10 to-emerald-500/10",
@@ -101,8 +97,7 @@ export default function Courses() {
                   <th className="p-4 font-bold text-sm md:text-base tracking-wide border-r border-white/20">Program</th>
                   <th className="p-4 font-bold text-sm md:text-base tracking-wide border-r border-white/20">Name of Course</th>
                   <th className="p-4 font-bold text-sm md:text-base tracking-wide text-center border-r border-white/20">Intake</th>
-                  <th className="p-4 font-bold text-sm md:text-base tracking-wide border-r border-white/20">Choice Code</th>
-                  <th className="p-4 font-bold text-sm md:text-base tracking-wide">Choice Code (TFWS)</th>
+                  <th className="p-4 font-bold text-sm md:text-base tracking-wide">DTE Code</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/60 bg-white">
@@ -121,11 +116,8 @@ export default function Courses() {
                     <td className="p-4 text-sm md:text-base text-foreground font-bold text-center border-r border-border/40">
                       {prog.intake}
                     </td>
-                    <td className="p-4 text-sm md:text-base text-muted-foreground font-mono tracking-tight border-r border-border/40">
-                      {prog.choiceCode}
-                    </td>
                     <td className="p-4 text-sm md:text-base text-muted-foreground font-mono tracking-tight">
-                      {prog.choiceCodeTfws}
+                      {prog.dteCode}
                     </td>
                   </tr>
                 ))}

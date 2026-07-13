@@ -186,9 +186,9 @@ export default function Home() {
               <CardContent className="p-8 flex flex-col justify-between h-full space-y-6">
                 <div className="space-y-4">
                   <div className="flex items-center gap-4 border-b border-border pb-4">
-                    <img 
-                      src="/president.jpg" 
-                      alt="Hon. Shri Ramdas Kakade" 
+                    <img
+                      src="/president.jpg"
+                      alt="Hon. Shri Ramdas Kakade"
                       className="h-14 w-14 rounded-full object-cover shrink-0 shadow-sm border border-border bg-muted"
                     />
                     <div>
@@ -224,9 +224,9 @@ export default function Home() {
               <CardContent className="p-8 flex flex-col justify-between h-full space-y-6">
                 <div className="space-y-4">
                   <div className="flex items-center gap-4 border-b border-border pb-4">
-                    <img 
-                      src="/secretary.jpg" 
-                      alt="Hon. Shri Chandrakant Shete" 
+                    <img
+                      src="/secretary.jpg"
+                      alt="Hon. Shri Chandrakant Shete"
                       className="h-14 w-14 rounded-full object-cover shrink-0 shadow-sm border border-border bg-muted"
                     />
                     <div>
@@ -262,13 +262,16 @@ export default function Home() {
               <CardContent className="p-8 flex flex-col justify-between h-full space-y-6">
                 <div className="space-y-4">
                   <div className="flex items-center gap-4 border-b border-border pb-4">
-                    <div className="h-14 w-14 rounded-full bg-gradient-to-tr from-primary to-primary-light flex items-center justify-center font-bold text-white text-lg shrink-0 shadow-sm">
-                      NN
-                    </div>
+                    <img
+                      src="/principal.png"
+                      alt="Dr. S. K. Malghe"
+                      className="h-14 w-14 rounded-full object-cover shrink-0 shadow-sm border border-border bg-muted"
+                    />
+
                     <div>
-                      <h3 className="font-bold text-base text-primary leading-tight">Prof. (Dr.) Narendra Narve</h3>
-                      <p className="text-xs text-muted-foreground mt-0.5">Director</p>
-                      <p className="text-[10px] text-accent font-semibold uppercase tracking-wider">Indrayani Vidya Mandir</p>
+                      <h3 className="font-bold text-base text-primary leading-tight">Dr. S. K. Malghe</h3>
+                      <p className="text-xs text-muted-foreground mt-0.5">Principal</p>
+                      <p className="text-[10px] text-accent font-semibold uppercase tracking-wider">Indrayani Mahavidyalaya</p>
                     </div>
                   </div>
                   <div className="text-muted-foreground text-sm leading-relaxed relative italic">
@@ -280,11 +283,11 @@ export default function Home() {
                   variant="link"
                   size="sm"
                   onClick={() => setActiveLeader({
-                    name: "Prof. (Dr.) Narendra Narve",
-                    role: "Director",
-                    organization: "Indrayani Vidya Mandir",
-                    initials: "NN",
-                    message: `Message from the Campus Director’s Desk
+                    name: "Dr. S. K. Malghe",
+                    role: "Principal",
+                    organization: "Indrayani Mahavidyalaya",
+                    image: "/principal.png",
+                    message: `Message from the Principal’s Desk
 
 It is my privilege to welcome all aspiring students to Indrayani Vidya Mandir.
 
@@ -296,7 +299,7 @@ We look forward to supporting you in shaping a purposeful and successful future.
 
 Admissions Open for the Academic Year 2026–27
 
-Campus Director
+Principal
 Indrayani Vidya Mandir.`
                   })}
                   className="text-accent hover:text-accent/80 font-bold p-0 self-start mt-2 h-auto"
@@ -478,9 +481,9 @@ Indrayani Vidya Mandir.`
               <div className="space-y-4">
                 <div className="flex items-center gap-4 border-b border-border pb-4">
                   {activeLeader?.image ? (
-                    <img 
-                      src={activeLeader.image} 
-                      alt={activeLeader.name} 
+                    <img
+                      src={activeLeader.image}
+                      alt={activeLeader.name}
                       className="h-16 w-16 rounded-full object-cover shrink-0 shadow-sm border border-border"
                     />
                   ) : (
@@ -496,17 +499,17 @@ Indrayani Vidya Mandir.`
                     <p className="text-xs text-accent font-semibold uppercase tracking-wider">{activeLeader?.organization}</p>
                   </div>
                 </div>
-                
+
                 {/* Full Message on the Left */}
                 <div className="text-muted-foreground text-sm md:text-base leading-relaxed whitespace-pre-line italic relative pl-6 pr-2">
                   <Quote className="absolute top-0 left-0 h-6 w-6 text-primary/10" />
                   {activeLeader?.message}
                 </div>
               </div>
-              
+
               <div className="pt-4 border-t border-border flex justify-end">
-                <Button 
-                  onClick={() => setActiveLeader(null)} 
+                <Button
+                  onClick={() => setActiveLeader(null)}
                   variant="outline"
                   className="font-semibold"
                 >
@@ -514,13 +517,13 @@ Indrayani Vidya Mandir.`
                 </Button>
               </div>
             </div>
-            
+
             {/* Right side: Large Image */}
             <div className="hidden md:block w-[35%] bg-muted relative shrink-0 border-l border-border select-none">
               {activeLeader?.image ? (
-                <img 
-                  src={activeLeader.image} 
-                  alt={activeLeader.name} 
+                <img
+                  src={activeLeader.image}
+                  alt={activeLeader.name}
                   className="w-full h-full object-cover"
                 />
               ) : (

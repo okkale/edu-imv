@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useRoute, Link } from "wouter";
 import { useGetFaculty } from "@workspace/api-client-react";
@@ -25,8 +25,13 @@ import {
   BookMarked,
   Briefcase,
   GraduationCap,
-  Sparkles
+  Sparkles,
+  Lock
 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Terminal } from "@/components/ui/terminal";
+import CourseGraph from "@/components/ui/course-graph";
+import SecurityTerminalEntry from "@/components/ui/SecurityTerminalEntry";
 
 // Types
 interface Subject {
@@ -604,12 +609,111 @@ const COURSE_DATA: Record<string, CourseInfo> = {
   }
 };
 
+interface LockedTerminalWrapperProps {
+  isUnlocked: boolean;
+  isVisible: boolean;
+  title?: string;
+  standbyText?: string;
+  children: React.ReactNode;
+}
+
+function LockedTerminalWrapper({
+  isUnlocked,
+  isVisible,
+  title = "TERMINAL SHELL SECURELY LOCKED",
+  standbyText = "INITIALIZING MOTION DETECTION STREAM...",
+  children
+}: LockedTerminalWrapperProps) {
+  return (
+    <div className="relative rounded-2xl overflow-hidden shadow-2xl">
+      <AnimatePresence>
+        {!isUnlocked && (
+          <motion.div
+            initial={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5 }}
+            className="absolute inset-0 bg-slate-950/95 backdrop-blur-md z-30 flex flex-col items-center justify-center p-6 text-center border border-red-500/20"
+          >
+            <div className="w-12 h-12 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center text-red-500 mb-3 animate-pulse">
+              <Lock className="w-5 h-5" />
+            </div>
+            <div className="text-red-400 font-mono text-xs tracking-widest font-bold uppercase mb-1">
+              [ {title} ]
+            </div>
+            <p className="text-slate-500 text-[10px] font-mono max-w-md">
+              {isVisible 
+                ? "DECRYPTING CORE MODULES... SECURE HANDSHAKE IN PROGRESS."
+                : standbyText
+              }
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      {children}
+    </div>
+  );
+}
+
 export default function CourseDetails({ params }: { params?: { id: string } }) {
   const [, routeParams] = useRoute("/courses/:id");
   const courseId = params?.id || routeParams?.id;
   const course = courseId ? COURSE_DATA[courseId] : null;
 
   const [activeTab, setActiveTab] = useState<"faculty" | "academics" | "syllabus" | "calendar">("faculty");
+  const [crawlerComplete, setCrawlerComplete] = useState<boolean>(false);
+
+  // States for Hero terminal unlock sequence
+  const [isHeroUnlocked, setIsHeroUnlocked] = useState<boolean>(false);
+  const [isHeroVisible, setIsHeroVisible] = useState<boolean>(false);
+  const [isGraphUnlocked, setIsGraphUnlocked] = useState<boolean>(false);
+
+  useEffect(() => {
+    setIsGraphUnlocked(false);
+    setIsHeroUnlocked(false);
+    setIsHeroVisible(false);
+    setCrawlerComplete(false);
+
+    let timer: NodeJS.Timeout;
+    if (courseId === "bca" || courseId === "mca") {
+      setIsHeroVisible(true);
+      timer = setTimeout(() => {
+        setIsHeroUnlocked(true);
+      }, 1500); // Auto unlock Hero terminal after 1.5s
+    }
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [courseId]);
+
+  // States for cinematic terminal scroll-trigger and decryption
+  const cinematicSectionRef = useRef<HTMLDivElement>(null);
+  const [isCinematicSectionVisible, setIsCinematicSectionVisible] = useState<boolean>(false);
+  const [isCinematicUnlocked, setIsCinematicUnlocked] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (courseId !== "bca" && courseId !== "mca") return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsCinematicSectionVisible(true);
+        } else {
+          // Reset entire state to step 1 when scrolled entirely out of view
+          setIsCinematicSectionVisible(false);
+          setIsCinematicUnlocked(false);
+        }
+      },
+      {
+        threshold: 0.1, // Trigger when 10% of the section is visible
+      }
+    );
+
+    if (cinematicSectionRef.current) {
+      observer.observe(cinematicSectionRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, [courseId]);
 
   // States for Academics Tab Tree diagram
   const [isTreeExpanded, setIsTreeExpanded] = useState<boolean>(false);
@@ -621,6 +725,19 @@ export default function CourseDetails({ params }: { params?: { id: string } }) {
 
   // Subject detail popup state
   const [activeDetailSubject, setActiveDetailSubject] = useState<Subject | null>(null);
+
+  // Fallback timer for crawler animation
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (courseId === "bca" || courseId === "mca") {
+      timer = setTimeout(() => {
+        setCrawlerComplete(true);
+      }, 8000); // 8 seconds fallback
+    }
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [courseId]);
 
   // Fetch live faculty members from API
   const { data: facultyMembersData, isLoading: isFacultyLoading } = useGetFaculty(
@@ -700,6 +817,36 @@ export default function CourseDetails({ params }: { params?: { id: string } }) {
   });
   const currentSyllabusSem = allSemestersList[syllabusSemIndex] || allSemestersList[0];
 
+  const isMBA = courseId === "mba";
+  const theme = {
+    hubBorder: isMBA ? "border-[#a855f7]" : "border-[#f59e0b]",
+    hubGlow: isMBA ? "shadow-[0_0_20px_rgba(168,85,247,0.2)]" : "shadow-[0_0_20px_rgba(245,158,11,0.2)]",
+    hubIcon: isMBA ? "text-[#a855f7]" : "text-[#f59e0b]",
+    
+    visionGradientStart: isMBA ? "#a855f7" : "#f59e0b",
+    visionGradientEnd: isMBA ? "#7e22ce" : "#d97706",
+    visionNodeBg: isMBA ? "from-[#a855f7]/20 to-[#7e22ce]/20" : "from-[#f59e0b]/20 to-[#d97706]/20",
+    visionNodeBorder: isMBA ? "border-[#a855f7]" : "border-[#f59e0b]",
+    visionNodeText: isMBA ? "text-[#a855f7]" : "text-[#f59e0b]",
+    visionNodeGlow: isMBA ? "shadow-[0_0_15px_rgba(168,85,247,0.15)]" : "shadow-[0_0_15px_rgba(245,158,11,0.15)]",
+    visionPathColor: isMBA ? "#7e22ce" : "#d97706",
+    visionBubbleHeader: isMBA ? "text-[#7e22ce]" : "text-[#d97706]",
+    visionBubbleBorderHover: isMBA ? "hover:border-[#a855f7]/40" : "hover:border-[#f59e0b]/40",
+    
+    missionGradientStart: isMBA ? "#a855f7" : "#f59e0b",
+    missionGradientEnd: isMBA ? "#0d9488" : "#0284c7",
+    missionNodeBg: isMBA ? "from-[#a855f7]/20 to-[#0d9488]/20" : "from-[#f59e0b]/20 to-[#0284c7]/20",
+    missionNodeBorder: isMBA ? "border-[#a855f7]" : "border-[#f59e0b]",
+    missionNodeText: isMBA ? "text-[#a855f7]" : "text-[#f59e0b]",
+    missionNodeGlow: isMBA ? "shadow-[0_0_15px_rgba(168,85,247,0.15)]" : "shadow-[0_0_15px_rgba(245,158,11,0.15)]",
+    missionPathColor: isMBA ? "#0d9488" : "#0284c7",
+    missionItemBorderHover: isMBA ? "hover:border-[#0d9488]/40" : "hover:border-[#0284c7]/40",
+    missionItemNumBg: isMBA ? "bg-[#0d9488]/10 text-[#0d9488]" : "bg-[#0284c7]/10 text-[#0284c7]",
+    
+    bgGlow: isMBA ? "bg-purple-500/5" : "bg-amber-500/5",
+    badgeLabel: isMBA ? "bg-purple-50 text-purple-600 border border-purple-100" : "bg-[#f59e0b]/10 text-[#f59e0b] border border-[#f59e0b]/20"
+  };
+
   return (
     <AppLayout>
       {/* Course Hero Banner */}
@@ -718,6 +865,74 @@ export default function CourseDetails({ params }: { params?: { id: string } }) {
             <p className="text-base md:text-lg text-primary-foreground/80 leading-relaxed">
               {course.summary}
             </p>
+            {courseId === "bca" && (
+              <div className="mt-8 animate-in fade-in duration-500">
+                <LockedTerminalWrapper
+                  isUnlocked={isHeroUnlocked}
+                  isVisible={isHeroVisible}
+                  title="CRAWLER GATEWAY SECURED"
+                  standbyText="ESTABLISHING SECURE DATABASE HANDSHAKE..."
+                >
+                  <Terminal
+                    active={isHeroUnlocked}
+                    commands={[
+                      "atul-crawler --target=bca",
+                      "fetch --url=edu-imv.vercel.app/courses/bca",
+                      "render --layout"
+                    ]}
+                    outputs={{
+                      0: [
+                        "✔ Connected to Indrayani Mahavidyalaya database...",
+                        "✔ Target: BCA (3 Years)"
+                      ],
+                      1: [
+                        "✔ Extracted 6 Semesters: Programming, Databases, Web Frameworks."
+                      ],
+                      2: [
+                        " [SUCCESS] BCA Course Layout Rendered Live."
+                      ]
+                    }}
+                    typingSpeed={45}
+                    delayBetweenCommands={1000}
+                    onComplete={() => setCrawlerComplete(true)}
+                  />
+                </LockedTerminalWrapper>
+              </div>
+            )}
+            {courseId === "mca" && (
+              <div className="mt-8 animate-in fade-in duration-500">
+                <LockedTerminalWrapper
+                  isUnlocked={isHeroUnlocked}
+                  isVisible={isHeroVisible}
+                  title="CRAWLER GATEWAY SECURED"
+                  standbyText="ESTABLISHING SECURE DATABASE HANDSHAKE..."
+                >
+                  <Terminal
+                    active={isHeroUnlocked}
+                    commands={[
+                      "atul-crawler --target=mca",
+                      "fetch --url=edu-imv.vercel.app/courses/mca",
+                      "deploy --env=production"
+                    ]}
+                    outputs={{
+                      0: [
+                        "✔ Connected to Indrayani Mahavidyalaya database...",
+                        "✔ Target: MCA (2 Years)"
+                      ],
+                      1: [
+                        "✔ Extracted 4 Semesters: Cloud Architectures, Machine Learning, DevOps."
+                      ],
+                      2: [
+                        " [SUCCESS] Production MCA Environment Deployed and Rendered."
+                      ]
+                    }}
+                    typingSpeed={45}
+                    delayBetweenCommands={1000}
+                    onComplete={() => setCrawlerComplete(true)}
+                  />
+                </LockedTerminalWrapper>
+              </div>
+            )}
           </div>
         </div>
       </section>
@@ -759,537 +974,1143 @@ export default function CourseDetails({ params }: { params?: { id: string } }) {
         </div>
       </section>
 
-      {/* Vision & Mission section */}
-      <section className="py-16 bg-background">
-        <div className="container mx-auto px-4 grid grid-cols-1 lg:grid-cols-2 gap-10">
-          <Card className="border-border shadow-md">
-            <CardContent className="p-8">
-              <div className="h-12 w-12 bg-[#f59e0b]/10 rounded-xl flex items-center justify-center text-[#f59e0b] mb-6">
-                <Eye className="h-6 w-6" />
-              </div>
-              <h2 className="text-xl md:text-2xl font-bold text-primary mb-4 font-sans">Our Vision</h2>
-              <p className="text-muted-foreground leading-relaxed">
-                {course.vision}
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-border shadow-md">
-            <CardContent className="p-8">
-              <div className="h-12 w-12 bg-[#f59e0b]/10 rounded-xl flex items-center justify-center text-[#f59e0b] mb-6">
-                <Target className="h-6 w-6" />
-              </div>
-              <h2 className="text-xl md:text-2xl font-bold text-primary mb-4 font-sans">Our Mission</h2>
-              <ul className="space-y-4">
-                {course.mission.map((m, idx) => (
-                  <li key={idx} className="flex gap-2.5 items-start text-muted-foreground text-sm md:text-base">
-                    <span className="text-[#f59e0b] font-bold mt-0.5">&bull;</span>
-                    <span className="leading-relaxed">{m}</span>
-                  </li>
-                ))}
-              </ul>
-            </CardContent>
-          </Card>
-        </div>
-      </section>
-
-      {/* Programme Outcomes section */}
-      {course.programOutcomes && (
-        <section className="py-16 bg-[#0f172a] text-white relative overflow-hidden border-t border-slate-800">
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff03_1px,transparent_1px),linear-gradient(to_bottom,#ffffff03_1px,transparent_1px)] bg-[size:30px_30px] opacity-40"></div>
-          <div className="container mx-auto px-4 relative z-10">
-            <div className="text-center max-w-3xl mx-auto mb-12">
-              <Badge className="bg-[#f59e0b] hover:bg-[#d97706] text-white border-none font-bold text-[10px] tracking-widest uppercase mb-3">
-                Programme Outcomes (POs)
-              </Badge>
-              <h2 className="text-2xl md:text-3xl font-bold font-sans tracking-tight">
-                What You Will Achieve / Graduate Profile
-              </h2>
-              <p className="text-slate-400 mt-2 text-sm md:text-base leading-relaxed">
-                By the end of the {course.shortName} programme, our graduates possess these core capabilities and professional outcomes:
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-6xl mx-auto">
-              {course.programOutcomes.map((po, idx) => {
-                // Split title and description if it has a dash or colon
-                const separatorIdx = po.indexOf(" - ");
-                const colonIdx = po.indexOf(": ");
-                let title = "";
-                let desc = po;
-
-                if (separatorIdx !== -1) {
-                  title = po.substring(0, separatorIdx);
-                  desc = po.substring(separatorIdx + 3);
-                } else if (colonIdx !== -1) {
-                  title = po.substring(0, colonIdx);
-                  desc = po.substring(colonIdx + 2);
-                }
-
-                return (
-                  <div key={idx} className="bg-slate-900/60 p-6 rounded-xl border border-slate-800/80 flex items-start gap-4 hover:border-[#f59e0b]/40 hover:bg-slate-900 transition-all duration-300">
-                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-[#f59e0b]/10 border border-[#f59e0b]/30 flex items-center justify-center text-[#f59e0b] font-bold font-mono text-sm">
-                      {idx + 1}
-                    </div>
-                    <div>
-                      {title && (
-                        <h4 className="font-bold text-slate-200 text-sm md:text-base mb-1">
-                          {title}
-                        </h4>
-                      )}
-                      <p className="text-slate-400 text-xs md:text-sm leading-relaxed">
-                        {desc}
-                      </p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </section>
+      {/* BBA & MBA Cinematic Animated Graph Hero */}
+      {(courseId === "bba" || courseId === "mba") && (
+        <CourseGraph 
+          type={courseId} 
+          isUnlocked={isGraphUnlocked}
+          onComplete={() => setIsGraphUnlocked(true)}
+          onReset={() => setIsGraphUnlocked(false)}
+        />
       )}
 
-      {/* Tabs Layout */}
-      <section className="py-16 bg-muted/10 border-t border-border/80">
-        <div className="container mx-auto px-4">
+      {/* Course Details sections */}
+      {courseId === "bca" || courseId === "mca" ? (
+        <>
+          {/* Vision & Mission section for BCA/MCA */}
+          <SecurityTerminalEntry
+            courseId={courseId}
+            courseName={course.name}
+            vision={course.vision}
+            mission={course.mission}
+            duration={course.duration}
+            intake={course.intake}
+          />
 
-          {/* Custom Tabs Navigation */}
-          <div className="flex border-b border-border/80 max-w-xl mx-auto mb-12 justify-center">
-            {(["faculty", "academics", "syllabus", "calendar"] as const).map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`flex-1 py-3 px-1 text-center font-bold text-xs md:text-sm uppercase tracking-wider border-b-2 transition-all duration-300 ${activeTab === tab
-                  ? "border-[#f59e0b] text-[#f59e0b] bg-white/50"
-                  : "border-transparent text-muted-foreground hover:text-primary"
-                  }`}
-              >
-                {tab === "calendar" ? "Academic Calendar" : tab}
-              </button>
-            ))}
-          </div>
-
-          {/* Dynamic Content Rendering */}
-          <div className="max-w-7xl mx-auto animate-in fade-in duration-300">
-
-            {/* 1. FACULTY ROSTER TAB */}
-            {activeTab === "faculty" && (
-              <div className="bg-white rounded-2xl border border-border shadow-md p-6 md:p-10">
-                <div className="flex flex-col items-center text-center mb-8">
-                  <Badge className="bg-blue-50 text-blue-600 border border-blue-100 font-semibold px-3 py-1 text-xs rounded-full mb-3 uppercase tracking-wider">
-                    Faculty Roster
+          {/* Programme Outcomes section */}
+          {course.programOutcomes && (
+            <section className="py-16 bg-[#0f172a] text-white relative overflow-hidden border-t border-slate-800">
+              <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff03_1px,transparent_1px),linear-gradient(to_bottom,#ffffff03_1px,transparent_1px)] bg-[size:30px_30px] opacity-40"></div>
+              <div className="container mx-auto px-4 relative z-10">
+                <div className="text-center max-w-3xl mx-auto mb-12">
+                  <Badge className="bg-[#f59e0b] hover:bg-[#d97706] text-white border-none font-bold text-[10px] tracking-widest uppercase mb-3">
+                    Programme Outcomes (POs)
                   </Badge>
-                  <h3 className="text-2xl md:text-3xl font-bold text-slate-900 font-sans">
-                    Department Faculty Members
-                  </h3>
-                </div>
-
-                {isFacultyLoading ? (
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {[1, 2, 3].map((i) => (
-                      <div key={i} className="aspect-[3/4] bg-slate-900 border border-slate-800 rounded-2xl animate-pulse flex flex-col justify-end p-6">
-                        <div className="h-6 w-3/4 bg-slate-800 rounded mb-2"></div>
-                        <div className="h-4 w-1/2 bg-slate-800 rounded"></div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {displayFaculty.map((member) => (
-                      <div
-                        key={member.id}
-                        className="relative overflow-hidden aspect-[3/4] bg-slate-950 border border-slate-800 rounded-2xl flex flex-col justify-end p-6 group cursor-pointer shadow-lg hover:shadow-xl transition-all duration-300"
-                      >
-                        {/* Grid Pattern Background */}
-                        <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none opacity-40"></div>
-
-                        {/* Image area */}
-                        {member.photoUrl ? (
-                          <img
-                            src={member.photoUrl}
-                            alt={member.name}
-                            className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                          />
-                        ) : (
-                          <div className="absolute inset-0 flex items-center justify-center text-slate-800/20 text-9xl font-bold select-none">
-                            {member.name.charAt(0)}
-                          </div>
-                        )}
-
-                        {/* Dark fading overlay */}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent z-10 opacity-90"></div>
-
-                        {/* Details */}
-                        <div className="relative z-20 text-left">
-                          {member.isHOD && (
-                            <span className="inline-block bg-[#f59e0b] text-white text-[10px] font-bold px-2 py-0.5 rounded-full mb-2 uppercase tracking-wide">
-                              Head of Department
-                            </span>
-                          )}
-                          <h4 className="text-white text-lg font-bold group-hover:text-[#f59e0b] transition-colors leading-tight">
-                            {member.name}
-                          </h4>
-                          <p className="text-slate-400 text-sm mt-1 font-medium">
-                            {member.designation}
-                          </p>
-                          {member.qualification && (
-                            <p className="text-slate-500 text-xs mt-1 truncate">
-                              {member.qualification}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* 2. ACADEMIC STRUCTURE TREE TAB */}
-            {activeTab === "academics" && (
-              <div>
-                {/* Section Header */}
-                <div className="bg-white rounded-2xl border border-border shadow-md p-6 mb-8 text-left">
-                  <h3 className="text-2xl md:text-3xl font-bold text-primary tracking-tight font-sans">
-                    Academic Structure
-                  </h3>
-                  <p className="text-muted-foreground mt-2 text-sm md:text-base leading-relaxed">
-                    The {course.shortName} program is a {course.duration} ({course.years.length * 2}-semester) full-time academic degree affiliated to SPPU, Pune.
+                  <h2 className="text-2xl md:text-3xl font-bold font-sans tracking-tight">
+                    What You Will Achieve / Graduate Profile
+                  </h2>
+                  <p className="text-slate-400 mt-2 text-sm md:text-base leading-relaxed">
+                    By the end of the {course.shortName} programme, our graduates possess these core capabilities and professional outcomes:
                   </p>
                 </div>
 
-                {/* Tree Diagram & Details — 2-column flexbox */}
-                <div className="flex flex-col lg:flex-row gap-6 items-start">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-6xl mx-auto">
+                  {course.programOutcomes.map((po, idx) => {
+                    const separatorIdx = po.indexOf(" - ");
+                    const colonIdx = po.indexOf(": ");
+                    let title = "";
+                    let desc = po;
 
-                  {/* LEFT COLUMN: Horizontal Tree (scrollable on small viewports, no scrollbars visible) */}
-                  <div className="flex-1 lg:max-w-[45%] bg-white rounded-2xl border border-border shadow-sm p-6 overflow-x-auto min-h-[350px] scrollbar-none flex items-center justify-center">
-                    <div className="flex flex-row items-center gap-4 min-w-max py-4">
+                    if (separatorIdx !== -1) {
+                      title = po.substring(0, separatorIdx);
+                      desc = po.substring(separatorIdx + 3);
+                    } else if (colonIdx !== -1) {
+                      title = po.substring(0, colonIdx);
+                      desc = po.substring(colonIdx + 2);
+                    }
 
-                      {/* Level 1: Degree Root Box */}
-                      <div className="relative flex items-center justify-center">
-                        <button
-                          onClick={() => {
-                            const nextState = !isTreeExpanded;
-                            setIsTreeExpanded(nextState);
-                            if (!nextState) {
-                              setAcademicsYearIndex(null);
-                              setAcademicsSemIndex(null);
-                            }
-                          }}
-                          className="bg-[#0f172a] text-white p-5 rounded-xl shadow-lg border border-slate-800 flex items-center justify-center gap-2.5 w-40 min-h-[75px] hover:bg-slate-800 transition-all relative z-10 cursor-pointer"
-                        >
-                          <GraduationCap className="h-6 w-6 text-[#f59e0b]" />
-                          <span className="font-bold text-base tracking-wide uppercase">{course.shortName}</span>
-                          <span className="text-slate-400 text-sm ml-1 font-semibold select-none">
-                            {isTreeExpanded ? "<" : ">"}
-                          </span>
-                        </button>
-
-                        {/* Root Connector Horizontal Line */}
-                        {isTreeExpanded && (
-                          <div className="absolute left-full top-1/2 -translate-y-1/2 w-6 h-[2px] bg-blue-500/40"></div>
-                        )}
-                      </div>
-
-                      {/* Level 2: Years Stacked Vertically */}
-                      {isTreeExpanded && (
-                        <div className="flex flex-col gap-6 pl-4 relative">
-                          {/* Vertical connector line */}
-                          <div className="absolute left-0 top-8 bottom-8 w-[2px] bg-slate-200" />
-
-                          {course.years.map((yr, yIdx) => {
-                            const isYearSelected = academicsYearIndex === yIdx;
-                            return (
-                              <div key={yIdx} className="flex items-center gap-4 relative">
-                                {/* Horizontal link line */}
-                                <div className="absolute -left-4 top-1/2 -translate-y-1/2 w-4 h-[2px] bg-slate-200" />
-
-                                {/* Year Button Card */}
-                                <button
-                                  onClick={() => {
-                                    if (isYearSelected) {
-                                      setAcademicsYearIndex(null);
-                                      setAcademicsSemIndex(null);
-                                    } else {
-                                      setAcademicsYearIndex(yIdx);
-                                      setAcademicsSemIndex(0);
-                                    }
-                                  }}
-                                  className={`text-left p-4 rounded-xl border transition-all duration-300 w-52 shadow-sm cursor-pointer ${isYearSelected
-                                    ? "bg-amber-50/50 border-[#f59e0b] ring-2 ring-[#f59e0b]/10"
-                                    : "bg-white border-border/80 hover:border-slate-400 hover:bg-slate-50"
-                                    }`}
-                                >
-                                  <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider mb-1">
-                                    {yr.label}
-                                  </span>
-                                  <span className="text-sm font-bold text-primary block leading-tight">
-                                    {yr.shortName}
-                                  </span>
-                                </button>
-
-                                {/* Level 3: Semester Pills */}
-                                {isYearSelected && (
-                                  <div className="flex flex-col gap-2.5 relative pl-4 animate-in fade-in slide-in-from-left-1 duration-200">
-                                    {/* Horizontal connector to sem stack */}
-                                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-4 h-[2px] bg-blue-500/30"></div>
-                                    <div className="absolute left-0 top-1/4 bottom-1/4 w-[2px] bg-blue-500/30"></div>
-
-                                    {yr.semesters.map((sem, sIdx) => {
-                                      const isSemSelected = academicsSemIndex === sIdx;
-                                      return (
-                                        <button
-                                          key={sIdx}
-                                          onClick={() => setAcademicsSemIndex(sIdx)}
-                                          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all relative z-10 w-24 text-center cursor-pointer ${isSemSelected
-                                            ? "bg-[#0f172a] text-white shadow-md"
-                                            : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
-                                            }`}
-                                        >
-                                          SEM {sem.num}
-                                        </button>
-                                      );
-                                    })}
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })}
+                    return (
+                      <div
+                        key={idx}
+                        className="bg-slate-900/60 p-6 rounded-xl border border-slate-800/80 flex items-start gap-4 hover:border-[#f59e0b]/40 hover:bg-slate-900 transition-all duration-300"
+                      >
+                        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-[#f59e0b]/10 border border-[#f59e0b]/30 flex items-center justify-center text-[#f59e0b] font-bold font-mono text-sm">
+                          {idx + 1}
                         </div>
-                      )}
+                        <div>
+                          {title && (
+                            <h4 className="font-bold text-slate-200 text-sm md:text-base mb-1">
+                              {title}
+                            </h4>
+                          )}
+                          <p className="text-slate-400 text-xs md:text-sm leading-relaxed">
+                            {desc}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </section>
+          )}
+
+          {/* Tabs Layout */}
+          <section className="py-16 bg-muted/10 border-t border-border/80">
+            <div className="container mx-auto px-4">
+              <div className="flex border-b border-border/80 max-w-xl mx-auto mb-12 justify-center">
+                {(["faculty", "academics", "syllabus", "calendar"] as const).map((tab) => (
+                  <button
+                    key={tab}
+                    onClick={() => setActiveTab(tab)}
+                    className={`flex-1 py-3 px-1 text-center font-bold text-xs md:text-sm uppercase tracking-wider border-b-2 transition-all duration-300 ${activeTab === tab
+                      ? "border-[#f59e0b] text-[#f59e0b] bg-white/50"
+                      : "border-transparent text-muted-foreground hover:text-primary"
+                      }`}
+                  >
+                    {tab === "calendar" ? "Academic Calendar" : tab}
+                  </button>
+                ))}
+              </div>
+
+              <div className="max-w-7xl mx-auto animate-in fade-in duration-300">
+                {activeTab === "faculty" && (
+                  <div className="bg-white rounded-2xl border border-border shadow-md p-6 md:p-10">
+                    <div className="flex flex-col items-center text-center mb-8">
+                      <Badge className="bg-blue-50 text-blue-600 border border-blue-100 font-semibold px-3 py-1 text-xs rounded-full mb-3 uppercase tracking-wider">
+                        Faculty Roster
+                      </Badge>
+                      <h3 className="text-2xl md:text-3xl font-bold text-slate-900 font-sans">
+                        Department Faculty Members
+                      </h3>
                     </div>
-                  </div>
 
-                  {/* RIGHT COLUMN: Semester Details (flex-1) */}
-                  {selectedSemObj ? (
-                    <div className="flex-1 bg-white rounded-2xl border border-border shadow-md overflow-hidden animate-in fade-in duration-300 min-w-0">
-
-                      {/* Compact Blue Header */}
-                      <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-5 py-3 flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <Badge className="bg-white/20 hover:bg-white/20 text-white border-none font-bold text-[10px] tracking-widest uppercase">
-                            SEM {selectedSemObj.num}
-                          </Badge>
-                          <h4 className="text-base font-bold font-sans">{selectedSemObj.name}</h4>
-                        </div>
-                        <div className="bg-white/10 px-2.5 py-1 rounded-lg border border-white/15 text-right shrink-0">
-                          <span className="text-[9px] text-white/70 block uppercase tracking-wider font-semibold leading-none">Credits</span>
-                          <span className="text-sm font-bold justify-center">{selectedSemObj.credits}</span>
-                        </div>
+                    {isFacultyLoading ? (
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        {[1, 2, 3].map((i) => (
+                          <div key={i} className="aspect-[3/4] bg-slate-900 border border-slate-800 rounded-2xl animate-pulse flex flex-col justify-end p-6">
+                            <div className="h-6 w-3/4 bg-slate-800 rounded mb-2"></div>
+                            <div className="h-4 w-1/2 bg-slate-800 rounded"></div>
+                          </div>
+                        ))}
                       </div>
-
-                      {/* Description */}
-                      <p className="text-xs text-muted-foreground leading-relaxed px-5 py-3 border-b border-border/60">
-                        {selectedSemObj.description}
-                      </p>
-
-                      {/* Subject Cards — 2-col grid */}
-                      <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-3 overflow-y-auto max-h-[480px]">
-                        {selectedSemObj.subjects.map((sub) => (
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        {displayFaculty.map((member) => (
                           <div
-                            key={sub.code}
-                            onClick={() => setActiveDetailSubject(sub)}
-                            className="p-3 rounded-lg border border-border/80 hover:border-[#f59e0b]/50 hover:shadow-sm transition-all duration-200 bg-slate-50/60 cursor-pointer group"
+                            key={member.id}
+                            className="relative overflow-hidden aspect-[3/4] bg-slate-950 border border-slate-800 rounded-2xl flex flex-col justify-end p-6 group cursor-pointer shadow-lg hover:shadow-xl transition-all duration-300"
                           >
-                            <div className="flex items-center justify-between gap-2 mb-1.5">
-                              <span className="text-[9px] font-bold text-slate-400 font-mono tracking-tight">{sub.code}</span>
-                              <Badge className={`text-[9px] font-bold px-1.5 py-0 rounded ${sub.type === "CORE"
-                                ? "bg-red-50 text-red-600 border border-red-100"
-                                : sub.type === "LAB"
-                                  ? "bg-emerald-50 text-emerald-600 border border-emerald-100"
-                                  : sub.type === "PROJECT"
-                                    ? "bg-purple-50 text-purple-600 border border-purple-100"
-                                    : "bg-blue-50 text-blue-600 border border-blue-100"
-                                }`}>
-                                {sub.type}
-                              </Badge>
-                            </div>
-                            <h5 className="font-semibold text-primary text-xs leading-snug group-hover:text-[#f59e0b] transition-colors">
-                              {sub.name}
-                            </h5>
-                            <div className="flex items-center gap-3 text-[10px] text-slate-400 font-medium mt-1.5">
-                              <span className="flex items-center gap-0.5"><Clock className="h-2.5 w-2.5 text-[#f59e0b]" />{sub.hours}h/wk</span>
-                              <span>{sub.credits} cr</span>
+                            <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none opacity-40"></div>
+                            {member.photoUrl ? (
+                              <img
+                                src={member.photoUrl}
+                                alt={member.name}
+                                className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                              />
+                            ) : (
+                              <div className="absolute inset-0 flex items-center justify-center text-slate-800/20 text-9xl font-bold select-none">
+                                {member.name.charAt(0)}
+                              </div>
+                            )}
+                            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent z-10 opacity-90"></div>
+                            <div className="relative z-20 text-left">
+                              {member.isHOD && (
+                                <span className="inline-block bg-[#f59e0b] text-white text-[10px] font-bold px-2 py-0.5 rounded-full mb-2 uppercase tracking-wide">
+                                  Head of Department
+                                </span>
+                              )}
+                              <h4 className="text-white text-lg font-bold group-hover:text-[#f59e0b] transition-colors leading-tight">
+                                {member.name}
+                              </h4>
+                              <p className="text-slate-400 text-sm mt-1 font-medium">
+                                {member.designation}
+                              </p>
+                              {member.qualification && (
+                                <p className="text-slate-500 text-xs mt-1 truncate">
+                                  {member.qualification}
+                                </p>
+                              )}
                             </div>
                           </div>
                         ))}
                       </div>
-                    </div>
-                  ) : (
-                    /* Hint when nothing is selected yet */
-                    isTreeExpanded && (
-                      <div className="flex-1 flex items-center justify-center min-h-[200px] text-slate-400 text-sm">
-                        ← Select a semester from the tree to view subjects
-                      </div>
-                    )
-                  )}
-
-                </div>
-              </div>
-            )}
-
-
-            {/* 3. SUBJECT-WISE SYLLABUS TAB */}
-            {activeTab === "syllabus" && (
-              <div className="bg-white rounded-2xl border border-border shadow-md p-6 md:p-10">
-
-                {/* Header */}
-                <div className="mb-8 text-left">
-                  <Badge className="bg-[#f59e0b]/10 text-[#f59e0b] border border-[#f59e0b]/20 font-semibold px-2.5 py-0.5 text-xs rounded-full mb-3 uppercase tracking-wider">
-                    Subject-wise Syllabus
-                  </Badge>
-                  <h3 className="text-2xl md:text-3xl font-bold text-primary font-sans leading-tight">
-                    Subject-wise Syllabus
-                  </h3>
-                  <p className="text-muted-foreground mt-2 text-sm md:text-base">
-                    The detailed syllabus for each subject based on the latest SPPU guidelines.
-                  </p>
-                </div>
-
-                {/* Horizontal Semester Pills selection */}
-                <div className="flex gap-2 overflow-x-auto pb-4 mb-8 border-b border-border/80 scrollbar-thin">
-                  {allSemestersList.map((sem, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => setSyllabusSemIndex(idx)}
-                      className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all ${syllabusSemIndex === idx
-                        ? "bg-[#0f172a] text-white shadow-md"
-                        : "bg-slate-100 text-slate-600 hover:bg-slate-200/70 border border-transparent"
-                        }`}
-                    >
-                      Semester {sem.num}
-                    </button>
-                  ))}
-                </div>
-
-                {/* Grid layout containing primary blue card + subject cards */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-
-
-
-                  {/* Subject Cards */}
-                  {currentSyllabusSem.subjects.map((sub) => (
-                    <div
-                      key={sub.code}
-                      className="group [perspective:1000px] h-[220px] w-full cursor-pointer"
-                    >
-                      <div className="relative w-full h-full transition-transform duration-500 [transform-style:preserve-3d] group-hover:[transform:rotateY(180deg)]">
-
-                        {/* Front Side */}
-                        <div className="absolute inset-0 w-full h-full [backface-visibility:hidden] bg-white rounded-2xl border border-border/80 p-6 flex flex-col justify-between shadow-sm">
-                          <div>
-                            <div className="flex items-center justify-between mb-4">
-                              <span className="text-[10px] font-bold text-slate-400 font-mono">{sub.code}</span>
-                              <Badge className={`text-[9px] font-bold px-2 py-0.5 rounded-md ${sub.type === "CORE"
-                                ? "bg-red-50 text-red-600 border border-red-100"
-                                : sub.type === "LAB"
-                                  ? "bg-emerald-50 text-emerald-600 border border-emerald-100"
-                                  : "bg-blue-50 text-blue-600 border border-blue-100"
-                                }`}>
-                                {sub.type}
-                              </Badge>
-                            </div>
-                            <h4 className="font-bold text-primary text-base font-sans group-hover:text-[#f59e0b] transition-colors leading-snug mb-3">
-                              {sub.name}
-                            </h4>
-                          </div>
-
-                          <div className="flex items-center justify-between pt-4 border-t border-border/50">
-                            <div className="text-slate-300">
-                              <BookOpen className="w-5 h-5" />
-                            </div>
-                            <span className="text-xs font-bold text-slate-500 font-sans">
-                              {sub.credits} Credits
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Back Side */}
-                        <div className="absolute inset-0 w-full h-full [backface-visibility:hidden] [transform:rotateY(180deg)] bg-slate-900 text-white rounded-2xl p-6 flex flex-col justify-between border border-slate-800 shadow-md">
-                          <div className="text-left">
-                            <span className="text-[9px] font-bold text-[#f59e0b] font-mono tracking-wider uppercase block mb-1">
-                              Subject Summary
-                            </span>
-                            <p className="text-slate-300 text-xs leading-relaxed line-clamp-4">
-                              {sub.description || "Detailed syllabus modules covering theoretical concepts, practical application frameworks, and continuous assessments."}
-                            </p>
-                          </div>
-
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setActiveDetailSubject(sub);
-                            }}
-                            className="w-full py-2 bg-[#f59e0b] hover:bg-[#d97706] text-white text-xs font-bold rounded-lg transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer mt-4"
-                          >
-                            View Syllabus Details &rarr;
-                          </button>
-                        </div>
-
-                      </div>
-                    </div>
-                  ))}
-
-                </div>
-
-              </div>
-            )}
-
-            {/* 4. ACADEMIC CALENDAR TAB */}
-            {activeTab === "calendar" && (
-              <div className="bg-white rounded-2xl border border-border shadow-md p-6 md:p-10">
-                <div className="mb-6 flex items-center justify-between">
-                  <div>
-                    <Badge className="bg-purple-50 text-purple-600 border border-purple-100 font-semibold px-2.5 py-0.5 text-xs rounded-full mb-2 uppercase tracking-wider">
-                      Academic Term
-                    </Badge>
-                    <h3 className="text-xl md:text-2xl font-bold text-primary font-sans">
-                      Academic Calendar Schedule
-                    </h3>
+                    )}
                   </div>
-                  <Calendar className="w-8 h-8 text-[#f59e0b]/40 hidden md:block" />
-                </div>
+                )}
 
-                <div className="overflow-x-auto rounded-xl border border-border/80 shadow-sm bg-white">
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="bg-slate-50 text-primary border-b border-border">
-                        <th className="p-4 font-bold text-sm md:text-base border-r border-border/40">Event / Activity</th>
-                        <th className="p-4 font-bold text-sm md:text-base border-r border-border/40">Scheduled Dates</th>
-                        <th className="p-4 font-bold text-sm md:text-base text-center">Event Type</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border/60">
-                      {course.calendar.map((ev, idx) => (
-                        <tr key={idx} className="hover:bg-slate-50/40">
-                          <td className="p-4 text-xs md:text-sm text-primary font-semibold border-r border-border/40">
-                            {ev.event}
-                          </td>
-                          <td className="p-4 text-xs md:text-sm text-foreground font-medium border-r border-border/40">
-                            {ev.dates}
-                          </td>
-                          <td className="p-4 text-center">
-                            <span className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-full ${ev.type === "Exam"
-                              ? "bg-red-50 text-red-600 border border-red-100"
-                              : ev.type === "Co-curricular"
-                                ? "bg-blue-50 text-blue-600 border border-blue-100"
-                                : "bg-emerald-50 text-emerald-600 border border-emerald-100"
-                              }`}>
-                              {ev.type}
-                            </span>
-                          </td>
-                        </tr>
+                {activeTab === "academics" && (
+                  <div>
+                    <div className="bg-white rounded-2xl border border-border shadow-md p-6 mb-8 text-left">
+                      <h3 className="text-2xl md:text-3xl font-bold text-primary tracking-tight font-sans">
+                        Academic Structure
+                      </h3>
+                      <p className="text-muted-foreground mt-2 text-sm md:text-base leading-relaxed">
+                        The {course.shortName} program is a {course.duration} ({course.years.length * 2}-semester) full-time academic degree affiliated to SPPU, Pune.
+                      </p>
+                    </div>
+
+                    <div className="flex flex-col lg:flex-row gap-6 items-start">
+                      <div className="flex-1 lg:max-w-[45%] bg-white rounded-2xl border border-border shadow-sm p-6 overflow-x-auto min-h-[350px] scrollbar-none flex items-center justify-center">
+                        <div className="flex flex-row items-center gap-4 min-w-max py-4">
+                          <div className="relative flex items-center justify-center">
+                            <button
+                              onClick={() => {
+                                const nextState = !isTreeExpanded;
+                                setIsTreeExpanded(nextState);
+                                if (!nextState) {
+                                  setAcademicsYearIndex(null);
+                                  setAcademicsSemIndex(null);
+                                }
+                              }}
+                              className="bg-[#0f172a] text-white p-5 rounded-xl shadow-lg border border-slate-800 flex items-center justify-center gap-2.5 w-40 min-h-[75px] hover:bg-slate-800 transition-all relative z-10 cursor-pointer"
+                            >
+                              <GraduationCap className="h-6 w-6 text-[#f59e0b]" />
+                              <span className="font-bold text-base tracking-wide uppercase">{course.shortName}</span>
+                              <span className="text-slate-400 text-sm ml-1 font-semibold select-none">
+                                {isTreeExpanded ? "<" : ">"}
+                              </span>
+                            </button>
+                            {isTreeExpanded && (
+                              <div className="absolute left-full top-1/2 -translate-y-1/2 w-6 h-[2px] bg-blue-500/40"></div>
+                            )}
+                          </div>
+
+                          {isTreeExpanded && (
+                            <div className="flex flex-col gap-6 pl-4 relative">
+                              <div className="absolute left-0 top-8 bottom-8 w-[2px] bg-slate-200" />
+                              {course.years.map((yr, yIdx) => {
+                                const isYearSelected = academicsYearIndex === yIdx;
+                                return (
+                                  <div key={yIdx} className="flex items-center gap-4 relative">
+                                    <div className="absolute -left-4 top-1/2 -translate-y-1/2 w-4 h-[2px] bg-slate-200" />
+                                    <button
+                                      onClick={() => {
+                                        if (isYearSelected) {
+                                          setAcademicsYearIndex(null);
+                                          setAcademicsSemIndex(null);
+                                        } else {
+                                          setAcademicsYearIndex(yIdx);
+                                          setAcademicsSemIndex(0);
+                                        }
+                                      }}
+                                      className={`text-left p-4 rounded-xl border transition-all duration-300 w-52 shadow-sm cursor-pointer ${isYearSelected
+                                        ? "bg-amber-50/50 border-[#f59e0b] ring-2 ring-[#f59e0b]/10"
+                                        : "bg-white border-border/80 hover:border-slate-400 hover:bg-slate-50"
+                                        }`}
+                                    >
+                                      <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider mb-1">
+                                        {yr.label}
+                                      </span>
+                                      <span className="text-sm font-bold text-primary block leading-tight">
+                                        {yr.shortName}
+                                      </span>
+                                    </button>
+
+                                    {isYearSelected && (
+                                      <div className="flex flex-col gap-2.5 relative pl-4 animate-in fade-in slide-in-from-left-1 duration-200">
+                                        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-4 h-[2px] bg-blue-500/30"></div>
+                                        <div className="absolute left-0 top-1/4 bottom-1/4 w-[2px] bg-blue-500/30"></div>
+                                        {yr.semesters.map((sem, sIdx) => {
+                                          const isSemSelected = academicsSemIndex === sIdx;
+                                          return (
+                                            <button
+                                              key={sIdx}
+                                              onClick={() => setAcademicsSemIndex(sIdx)}
+                                              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all relative z-10 w-24 text-center cursor-pointer ${isSemSelected
+                                                ? "bg-[#0f172a] text-white shadow-md"
+                                                : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
+                                                }`}
+                                            >
+                                              SEM {sem.num}
+                                            </button>
+                                          );
+                                        })}
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {selectedSemObj ? (
+                        <div className="flex-1 bg-white rounded-2xl border border-border shadow-md overflow-hidden animate-in fade-in duration-300 min-w-0">
+                          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-5 py-3 flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <Badge className="bg-white/20 hover:bg-white/20 text-white border-none font-bold text-[10px] tracking-widest uppercase">
+                                SEM {selectedSemObj.num}
+                              </Badge>
+                              <h4 className="text-base font-bold font-sans">{selectedSemObj.name}</h4>
+                            </div>
+                            <div className="bg-white/10 px-2.5 py-1 rounded-lg border border-white/15 text-right shrink-0">
+                              <span className="text-[9px] text-white/70 block uppercase tracking-wider font-semibold leading-none">Credits</span>
+                              <span className="text-sm font-bold justify-center">{selectedSemObj.credits}</span>
+                            </div>
+                          </div>
+                          <p className="text-xs text-muted-foreground leading-relaxed px-5 py-3 border-b border-border/60">
+                            {selectedSemObj.description}
+                          </p>
+                          <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-3 overflow-y-auto max-h-[480px]">
+                            {selectedSemObj.subjects.map((sub) => (
+                              <div
+                                key={sub.code}
+                                onClick={() => setActiveDetailSubject(sub)}
+                                className="p-3 rounded-lg border border-border/80 hover:border-[#f59e0b]/50 hover:shadow-sm transition-all duration-200 bg-slate-50/60 cursor-pointer group"
+                              >
+                                <div className="flex items-center justify-between gap-2 mb-1.5">
+                                  <span className="text-[9px] font-bold text-slate-400 font-mono tracking-tight">{sub.code}</span>
+                                  <Badge className={`text-[9px] font-bold px-1.5 py-0 rounded ${sub.type === "CORE"
+                                    ? "bg-red-50 text-red-600 border border-red-100"
+                                    : sub.type === "LAB"
+                                      ? "bg-emerald-50 text-emerald-600 border border-emerald-100"
+                                      : sub.type === "PROJECT"
+                                        ? "bg-purple-50 text-purple-600 border border-purple-100"
+                                        : "bg-blue-50 text-blue-600 border border-blue-100"
+                                    }`}>
+                                    {sub.type}
+                                  </Badge>
+                                </div>
+                                <h5 className="font-semibold text-primary text-xs leading-snug group-hover:text-[#f59e0b] transition-colors">
+                                  {sub.name}
+                                </h5>
+                                <div className="flex items-center gap-3 text-[10px] text-slate-400 font-medium mt-1.5">
+                                  <span className="flex items-center gap-0.5"><Clock className="h-2.5 w-2.5 text-[#f59e0b]" />{sub.hours}h/wk</span>
+                                  <span>{sub.credits} cr</span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ) : (
+                        isTreeExpanded && (
+                          <div className="flex-1 flex items-center justify-center min-h-[200px] text-slate-400 text-sm">
+                            ← Select a semester from the tree to view subjects
+                          </div>
+                        )
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {activeTab === "syllabus" && (
+                  <div className="bg-white rounded-2xl border border-border shadow-md p-6 md:p-10">
+                    <div className="mb-8 text-left">
+                      <Badge className="bg-[#f59e0b]/10 text-[#f59e0b] border border-[#f59e0b]/20 font-semibold px-2.5 py-0.5 text-xs rounded-full mb-3 uppercase tracking-wider">
+                        Subject-wise Syllabus
+                      </Badge>
+                      <h3 className="text-2xl md:text-3xl font-bold text-primary font-sans leading-tight">
+                        Subject-wise Syllabus
+                      </h3>
+                      <p className="text-muted-foreground mt-2 text-sm md:text-base">
+                        The detailed syllabus for each subject based on the latest SPPU guidelines.
+                      </p>
+                    </div>
+
+                    <div className="flex gap-2 overflow-x-auto pb-4 mb-8 border-b border-border/80 scrollbar-thin">
+                      {allSemestersList.map((sem, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => setSyllabusSemIndex(idx)}
+                          className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all ${syllabusSemIndex === idx
+                            ? "bg-[#0f172a] text-white shadow-md"
+                            : "bg-slate-100 text-slate-600 hover:bg-slate-200/70 border border-transparent"
+                            }`}
+                        >
+                          Semester {sem.num}
+                        </button>
                       ))}
-                    </tbody>
-                  </table>
-                </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {currentSyllabusSem.subjects.map((sub) => (
+                        <div
+                          key={sub.code}
+                          className="group [perspective:1000px] h-[220px] w-full cursor-pointer"
+                        >
+                          <div className="relative w-full h-full transition-transform duration-500 [transform-style:preserve-3d] group-hover:[transform:rotateY(180deg)]">
+                            <div className="absolute inset-0 w-full h-full [backface-visibility:hidden] bg-white rounded-2xl border border-border/80 p-6 flex flex-col justify-between shadow-sm">
+                              <div>
+                                <div className="flex items-center justify-between mb-4">
+                                  <span className="text-[10px] font-bold text-slate-400 font-mono">{sub.code}</span>
+                                  <Badge className={`text-[9px] font-bold px-2 py-0.5 rounded-md ${sub.type === "CORE"
+                                    ? "bg-red-50 text-red-600 border border-red-100"
+                                    : sub.type === "LAB"
+                                      ? "bg-emerald-50 text-emerald-600 border border-emerald-100"
+                                      : "bg-blue-50 text-blue-600 border border-blue-100"
+                                    }`}>
+                                    {sub.type}
+                                  </Badge>
+                                </div>
+                                <h4 className="font-bold text-primary text-base font-sans group-hover:text-[#f59e0b] transition-colors leading-snug mb-3">
+                                  {sub.name}
+                                </h4>
+                              </div>
+                              <div className="flex items-center justify-between pt-4 border-t border-border/50">
+                                <div className="text-slate-300">
+                                  <BookOpen className="w-5 h-5" />
+                                </div>
+                                <span className="text-xs font-bold text-slate-500 font-sans">
+                                  {sub.credits} Credits
+                                </span>
+                              </div>
+                            </div>
+
+                            <div className="absolute inset-0 w-full h-full [backface-visibility:hidden] [transform:rotateY(180deg)] bg-slate-900 text-white rounded-2xl p-6 flex flex-col justify-between border border-slate-800 shadow-md">
+                              <div className="text-left">
+                                <span className="text-[9px] font-bold text-[#f59e0b] font-mono tracking-wider uppercase block mb-1">
+                                  Subject Summary
+                                </span>
+                                <p className="text-slate-300 text-xs leading-relaxed line-clamp-4">
+                                  {sub.description || "Detailed syllabus modules covering theoretical concepts, practical application frameworks, and continuous assessments."}
+                                </p>
+                              </div>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setActiveDetailSubject(sub);
+                                }}
+                                className="w-full py-2 bg-[#f59e0b] hover:bg-[#d97706] text-white text-xs font-bold rounded-lg transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer mt-4"
+                              >
+                                View Syllabus Details &rarr;
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {activeTab === "calendar" && (
+                  <div className="bg-white rounded-2xl border border-border shadow-md p-6 md:p-10">
+                    <div className="flex items-center justify-between mb-6">
+                      <div>
+                        <Badge className="bg-purple-50 text-purple-600 border border-purple-100 font-semibold px-2.5 py-0.5 text-xs rounded-full mb-2 uppercase tracking-wider">
+                          Academic Term
+                        </Badge>
+                        <h3 className="text-xl md:text-2xl font-bold text-primary font-sans">
+                          Academic Calendar Schedule
+                        </h3>
+                      </div>
+                      <Calendar className="w-8 h-8 text-[#f59e0b]/40 hidden md:block" />
+                    </div>
+
+                    <div className="overflow-x-auto rounded-xl border border-border/80 shadow-sm bg-white">
+                      <table className="w-full text-left border-collapse">
+                        <thead>
+                          <tr className="bg-slate-50 text-primary border-b border-border">
+                            <th className="p-4 font-bold text-sm md:text-base border-r border-border/40">Event / Activity</th>
+                            <th className="p-4 font-bold text-sm md:text-base border-r border-border/40">Scheduled Dates</th>
+                            <th className="p-4 font-bold text-sm md:text-base text-center">Event Type</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-border/60">
+                          {course.calendar.map((ev, idx) => (
+                            <tr key={idx} className="hover:bg-slate-50/40">
+                              <td className="p-4 text-xs md:text-sm text-primary font-semibold border-r border-border/40">
+                                {ev.event}
+                              </td>
+                              <td className="p-4 text-xs md:text-sm text-foreground font-medium border-r border-border/40">
+                                {ev.dates}
+                              </td>
+                              <td className="p-4 text-center">
+                                <span className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-full ${ev.type === "Exam"
+                                  ? "bg-red-50 text-red-600 border border-red-100"
+                                  : ev.type === "Co-curricular"
+                                    ? "bg-blue-50 text-blue-600 border border-blue-100"
+                                    : "bg-emerald-50 text-emerald-600 border border-emerald-100"
+                                  }`}>
+                                  {ev.type}
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
               </div>
-            )}
+            </div>
+          </section>
+        </>
+      ) : (
+        /* BBA / MBA sequential reveal sections */
+        <AnimatePresence>
+          {isGraphUnlocked && (
+            <motion.div
+              initial="hidden"
+              animate="visible"
+              exit="hidden"
+              variants={{
+                visible: { transition: { staggerChildren: 0.3 } }
+              }}
+              className="w-full bg-background"
+            >
+              {/* Vision & Mission section */}
+              {/* Vision & Mission section */}
+              <motion.section 
+                variants={{
+                  hidden: { opacity: 0, y: 40 },
+                  visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] } }
+                }}
+                className="py-16 bg-gradient-to-b from-background via-slate-50/30 to-background relative overflow-hidden border-t border-slate-100"
+              >
+                {/* Decorative background grid/glows */}
+                <div className="absolute inset-0 bg-[linear-gradient(to_right,#0f172a03_1px,transparent_1px),linear-gradient(to_bottom,#0f172a03_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none opacity-60"></div>
+                <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] ${theme.bgGlow} rounded-full blur-[120px] pointer-events-none`} />
+                
+                <div className="container mx-auto px-4 max-w-6xl relative z-10">
+                  <div className="text-center mb-16">
+                    <Badge className={`${theme.badgeLabel} font-bold px-3 py-1 text-xs rounded-full mb-3 uppercase tracking-wider`}>
+                      Strategic Direction
+                    </Badge>
+                    <h2 className="text-2xl md:text-3xl font-extrabold text-primary font-sans">
+                      Core Institutional Pillars
+                    </h2>
+                    <p className="text-muted-foreground mt-2 text-xs md:text-sm max-w-xl mx-auto">
+                      Our vision and mission mapped as interconnected nodes driving student excellence and career readiness.
+                    </p>
+                  </div>
 
-          </div>
+                  {/* Responsive Graph Tree */}
+                  <div className="relative">
+                    {/* Desktop SVG Connecting Lines */}
+                    <svg className="absolute inset-0 w-full h-full pointer-events-none hidden lg:block overflow-visible" style={{ minHeight: '450px' }}>
+                      <defs>
+                        <linearGradient id="gradient-to-vision" x1="50%" y1="0%" x2="0%" y2="100%">
+                          <stop offset="0%" stopColor={theme.visionGradientStart} stopOpacity="0.8" />
+                          <stop offset="100%" stopColor={theme.visionGradientEnd} stopOpacity="0.4" />
+                        </linearGradient>
+                        <linearGradient id="gradient-to-mission" x1="50%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%" stopColor={theme.missionGradientStart} stopOpacity="0.8" />
+                          <stop offset="100%" stopColor={theme.missionGradientEnd} stopOpacity="0.4" />
+                        </linearGradient>
+                      </defs>
 
-        </div>
-      </section>
+                      {/* Main central hub to Vision Node */}
+                      <motion.path
+                        d="M 550,15 Q 320,15 230,105"
+                        fill="none"
+                        stroke="url(#gradient-to-vision)"
+                        strokeWidth="3"
+                        strokeDasharray="4 4"
+                        initial={{ pathLength: 0 }}
+                        whileInView={{ pathLength: 1 }}
+                        transition={{ duration: 1.5, ease: "easeInOut" }}
+                      />
+
+                      {/* Vision Node to Vision Statement Bubble */}
+                      <motion.path
+                        d="M 230,175 L 230,240"
+                        fill="none"
+                        stroke={theme.visionPathColor}
+                        strokeWidth="2.5"
+                        initial={{ pathLength: 0 }}
+                        whileInView={{ pathLength: 1 }}
+                        transition={{ duration: 1, ease: "easeInOut", delay: 0.5 }}
+                      />
+
+                      {/* Main central hub to Mission Node */}
+                      <motion.path
+                        d="M 550,15 Q 780,15 870,105"
+                        fill="none"
+                        stroke="url(#gradient-to-mission)"
+                        strokeWidth="3"
+                        strokeDasharray="4 4"
+                        initial={{ pathLength: 0 }}
+                        whileInView={{ pathLength: 1 }}
+                        transition={{ duration: 1.5, ease: "easeInOut" }}
+                      />
+
+                      {/* Mission Node branching to Mission Item 1 */}
+                      <motion.path
+                        d="M 870,175 C 870,205 670,205 670,240"
+                        fill="none"
+                        stroke={theme.missionPathColor}
+                        strokeWidth="2"
+                        initial={{ pathLength: 0 }}
+                        whileInView={{ pathLength: 1 }}
+                        transition={{ duration: 1.2, ease: "easeInOut", delay: 0.6 }}
+                      />
+
+                      {/* Mission Node branching to Mission Item 2 */}
+                      <motion.path
+                        d="M 870,175 L 870,240"
+                        fill="none"
+                        stroke={theme.missionPathColor}
+                        strokeWidth="2"
+                        initial={{ pathLength: 0 }}
+                        whileInView={{ pathLength: 1 }}
+                        transition={{ duration: 1.2, ease: "easeInOut", delay: 0.6 }}
+                      />
+
+                      {/* Mission Node branching to Mission Item 3 */}
+                      <motion.path
+                        d="M 870,175 C 870,205 1070,205 1070,240"
+                        fill="none"
+                        stroke={theme.missionPathColor}
+                        strokeWidth="2"
+                        initial={{ pathLength: 0 }}
+                        whileInView={{ pathLength: 1 }}
+                        transition={{ duration: 1.2, ease: "easeInOut", delay: 0.6 }}
+                      />
+                    </svg>
+
+                    {/* Nodes Container */}
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-0 lg:min-h-[480px] relative">
+                      
+                      {/* Top Row: Central Hub */}
+                      <div className="lg:col-span-12 flex justify-center mb-8 lg:mb-0 lg:h-16">
+                        <motion.div
+                          initial={{ opacity: 0, y: -20 }}
+                          whileInView={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.6 }}
+                          className={`bg-[#0f172a] border-2 ${theme.hubBorder} ${theme.hubGlow} rounded-full px-6 py-2.5 flex items-center gap-2.5 relative z-20`}
+                        >
+                          <Sparkles className={`w-4 h-4 ${theme.hubIcon} animate-pulse`} />
+                          <span className="text-white font-extrabold text-xs md:text-sm uppercase tracking-widest font-mono">
+                            {course.shortName} Strategic Hub
+                          </span>
+                        </motion.div>
+                      </div>
+
+                      {/* Left Column: Vision Branch */}
+                      <div className="lg:col-span-5 flex flex-col items-center">
+                        {/* Vision Main Node */}
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0.8 }}
+                          whileInView={{ opacity: 1, scale: 1 }}
+                          transition={{ duration: 0.5, delay: 0.3 }}
+                          className={`w-20 h-20 rounded-full bg-gradient-to-br ${theme.visionNodeBg} border-2 ${theme.visionNodeBorder} flex items-center justify-center ${theme.visionNodeText} ${theme.visionNodeGlow} relative z-10 mb-8 lg:mb-12 hover:scale-105 transition-transform`}
+                        >
+                          <div className="flex flex-col items-center">
+                            <Eye className="h-6 w-6" />
+                            <span className="text-[9px] font-bold tracking-wider mt-1 uppercase font-mono">Vision</span>
+                          </div>
+                        </motion.div>
+
+                        {/* Vision Statement Node */}
+                        <motion.div
+                          initial={{ opacity: 0, y: 20 }}
+                          whileInView={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.6, delay: 0.6 }}
+                          className={`bg-white border border-slate-200/80 p-6 md:p-8 rounded-2xl shadow-lg hover:shadow-xl ${theme.visionBubbleBorderHover} transition-all duration-300 max-w-sm text-center relative z-10`}
+                        >
+                          <h4 className={`font-extrabold ${theme.visionBubbleHeader} text-sm uppercase tracking-wider mb-2.5`}>
+                            Our Vision Statement
+                          </h4>
+                          <p className="text-slate-600 text-xs md:text-sm leading-relaxed font-medium">
+                            {course.vision}
+                          </p>
+                        </motion.div>
+                      </div>
+
+                      {/* Center gap to balance Grid columns */}
+                      <div className="hidden lg:block lg:col-span-2"></div>
+
+                      {/* Right Column: Mission Branch */}
+                      <div className="lg:col-span-5 flex flex-col items-center">
+                        {/* Mission Main Node */}
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0.8 }}
+                          whileInView={{ opacity: 1, scale: 1 }}
+                          transition={{ duration: 0.5, delay: 0.3 }}
+                          className={`w-20 h-20 rounded-full bg-gradient-to-br ${theme.missionNodeBg} border-2 ${theme.missionNodeBorder} flex items-center justify-center ${theme.missionNodeText} ${theme.missionNodeGlow} relative z-10 mb-8 lg:mb-12 hover:scale-105 transition-transform`}
+                        >
+                          <div className="flex flex-col items-center">
+                            <Target className="h-6 w-6" />
+                            <span className="text-[9px] font-bold tracking-wider mt-1 uppercase font-mono">Mission</span>
+                          </div>
+                        </motion.div>
+
+                        {/* Mission Points */}
+                        <div className="flex flex-col lg:flex-row gap-6 w-full relative z-10 items-stretch lg:items-start lg:justify-center">
+                          {course.mission.map((m, idx) => (
+                            <motion.div
+                              key={idx}
+                              initial={{ opacity: 0, y: 20 }}
+                              whileInView={{ opacity: 1, y: 0 }}
+                              transition={{ duration: 0.6, delay: 0.6 + idx * 0.2 }}
+                              className={`bg-white border border-slate-200/80 p-5 rounded-2xl shadow-md hover:shadow-lg ${theme.missionItemBorderHover} transition-all duration-300 flex-1 max-w-xs flex flex-col text-left`}
+                            >
+                              <div className="flex items-center gap-3 mb-3">
+                                <div className={`w-6 h-6 rounded-full ${theme.missionItemNumBg} flex items-center justify-center font-bold text-xs font-mono`}>
+                                  {idx + 1}
+                                </div>
+                                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Mission Pillar</span>
+                              </div>
+                              <p className="text-slate-600 text-xs leading-relaxed font-medium">
+                                {m}
+                              </p>
+                            </motion.div>
+                          ))}
+                        </div>
+                      </div>
+
+                    </div>
+                  </div>
+                </div>
+              </motion.section>
+
+              {/* Programme Outcomes section */}
+              {course.programOutcomes && (
+                <motion.section 
+                  variants={{
+                    hidden: { opacity: 0, y: 40 },
+                    visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] } }
+                  }}
+                  className="py-16 bg-[#0f172a] text-white relative overflow-hidden border-t border-slate-800"
+                >
+                  <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff03_1px,transparent_1px),linear-gradient(to_bottom,#ffffff03_1px,transparent_1px)] bg-[size:30px_30px] opacity-40"></div>
+                  <div className="container mx-auto px-4 relative z-10">
+                    <div className="text-center max-w-3xl mx-auto mb-12">
+                      <Badge className="bg-[#f59e0b] hover:bg-[#d97706] text-white border-none font-bold text-[10px] tracking-widest uppercase mb-3">
+                        Programme Outcomes (POs)
+                      </Badge>
+                      <h2 className="text-2xl md:text-3xl font-bold font-sans tracking-tight">
+                        What You Will Achieve / Graduate Profile
+                      </h2>
+                      <p className="text-slate-400 mt-2 text-sm md:text-base leading-relaxed">
+                        By the end of the {course.shortName} programme, our graduates possess these core capabilities and professional outcomes:
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-6xl mx-auto">
+                      {course.programOutcomes.map((po, idx) => {
+                        const separatorIdx = po.indexOf(" - ");
+                        const colonIdx = po.indexOf(": ");
+                        let title = "";
+                        let desc = po;
+
+                        if (separatorIdx !== -1) {
+                          title = po.substring(0, separatorIdx);
+                          desc = po.substring(separatorIdx + 3);
+                        } else if (colonIdx !== -1) {
+                          title = po.substring(0, colonIdx);
+                          desc = po.substring(colonIdx + 2);
+                        }
+
+                        return (
+                          <div
+                            key={idx}
+                            className="bg-slate-900/60 p-6 rounded-xl border border-slate-800/80 flex items-start gap-4 hover:border-[#f59e0b]/40 hover:bg-slate-900 transition-all duration-300"
+                          >
+                            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-[#f59e0b]/10 border border-[#f59e0b]/30 flex items-center justify-center text-[#f59e0b] font-bold font-mono text-sm">
+                              {idx + 1}
+                            </div>
+                            <div>
+                              {title && (
+                                <h4 className="font-bold text-slate-200 text-sm md:text-base mb-1">
+                                  {title}
+                                </h4>
+                              )}
+                              <p className="text-slate-400 text-xs md:text-sm leading-relaxed">
+                                {desc}
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </motion.section>
+              )}
+
+              {/* Tabs Layout */}
+              <motion.section 
+                variants={{
+                  hidden: { opacity: 0, y: 40 },
+                  visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] } }
+                }}
+                className="py-16 bg-muted/10 border-t border-border/80"
+              >
+                <div className="container mx-auto px-4">
+                  <div className="flex border-b border-border/80 max-w-xl mx-auto mb-12 justify-center">
+                    {(["faculty", "academics", "syllabus", "calendar"] as const).map((tab) => (
+                      <button
+                        key={tab}
+                        onClick={() => setActiveTab(tab)}
+                        className={`flex-1 py-3 px-1 text-center font-bold text-xs md:text-sm uppercase tracking-wider border-b-2 transition-all duration-300 ${activeTab === tab
+                          ? "border-[#f59e0b] text-[#f59e0b] bg-white/50"
+                          : "border-transparent text-muted-foreground hover:text-primary"
+                          }`}
+                      >
+                        {tab === "calendar" ? "Academic Calendar" : tab}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="max-w-7xl mx-auto animate-in fade-in duration-300">
+                    {activeTab === "faculty" && (
+                      <div className="bg-white rounded-2xl border border-border shadow-md p-6 md:p-10">
+                        <div className="flex flex-col items-center text-center mb-8">
+                          <Badge className="bg-blue-50 text-blue-600 border border-blue-100 font-semibold px-3 py-1 text-xs rounded-full mb-3 uppercase tracking-wider">
+                            Faculty Roster
+                          </Badge>
+                          <h3 className="text-2xl md:text-3xl font-bold text-slate-900 font-sans">
+                            Department Faculty Members
+                          </h3>
+                        </div>
+
+                        {isFacultyLoading ? (
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            {[1, 2, 3].map((i) => (
+                              <div key={i} className="aspect-[3/4] bg-slate-900 border border-slate-800 rounded-2xl animate-pulse flex flex-col justify-end p-6">
+                                <div className="h-6 w-3/4 bg-slate-800 rounded mb-2"></div>
+                                <div className="h-4 w-1/2 bg-slate-800 rounded"></div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            {displayFaculty.map((member) => (
+                              <div
+                                key={member.id}
+                                className="relative overflow-hidden aspect-[3/4] bg-slate-950 border border-slate-800 rounded-2xl flex flex-col justify-end p-6 group cursor-pointer shadow-lg hover:shadow-xl transition-all duration-300"
+                              >
+                                <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none opacity-40"></div>
+                                {member.photoUrl ? (
+                                  <img
+                                    src={member.photoUrl}
+                                    alt={member.name}
+                                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                  />
+                                ) : (
+                                  <div className="absolute inset-0 flex items-center justify-center text-slate-800/20 text-9xl font-bold select-none">
+                                    {member.name.charAt(0)}
+                                  </div>
+                                )}
+                                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent z-10 opacity-90"></div>
+                                <div className="relative z-20 text-left">
+                                  {member.isHOD && (
+                                    <span className="inline-block bg-[#f59e0b] text-white text-[10px] font-bold px-2 py-0.5 rounded-full mb-2 uppercase tracking-wide">
+                                      Head of Department
+                                    </span>
+                                  )}
+                                  <h4 className="text-white text-lg font-bold group-hover:text-[#f59e0b] transition-colors leading-tight">
+                                    {member.name}
+                                  </h4>
+                                  <p className="text-slate-400 text-sm mt-1 font-medium">
+                                    {member.designation}
+                                  </p>
+                                  {member.qualification && (
+                                    <p className="text-slate-500 text-xs mt-1 truncate">
+                                      {member.qualification}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {activeTab === "academics" && (
+                      <div>
+                        <div className="bg-white rounded-2xl border border-border shadow-md p-6 mb-8 text-left">
+                          <h3 className="text-2xl md:text-3xl font-bold text-primary tracking-tight font-sans">
+                            Academic Structure
+                          </h3>
+                          <p className="text-muted-foreground mt-2 text-sm md:text-base leading-relaxed">
+                            The {course.shortName} program is a {course.duration} ({course.years.length * 2}-semester) full-time academic degree affiliated to SPPU, Pune.
+                          </p>
+                        </div>
+
+                        <div className="flex flex-col lg:flex-row gap-6 items-start">
+                          <div className="flex-1 lg:max-w-[45%] bg-white rounded-2xl border border-border shadow-sm p-6 overflow-x-auto min-h-[350px] scrollbar-none flex items-center justify-center">
+                            <div className="flex flex-row items-center gap-4 min-w-max py-4">
+                              <div className="relative flex items-center justify-center">
+                                <button
+                                  onClick={() => {
+                                    const nextState = !isTreeExpanded;
+                                    setIsTreeExpanded(nextState);
+                                    if (!nextState) {
+                                      setAcademicsYearIndex(null);
+                                      setAcademicsSemIndex(null);
+                                    }
+                                  }}
+                                  className="bg-[#0f172a] text-white p-5 rounded-xl shadow-lg border border-slate-800 flex items-center justify-center gap-2.5 w-40 min-h-[75px] hover:bg-slate-800 transition-all relative z-10 cursor-pointer"
+                                >
+                                  <GraduationCap className="h-6 w-6 text-[#f59e0b]" />
+                                  <span className="font-bold text-base tracking-wide uppercase">{course.shortName}</span>
+                                  <span className="text-slate-400 text-sm ml-1 font-semibold select-none">
+                                    {isTreeExpanded ? "<" : ">"}
+                                  </span>
+                                </button>
+                                {isTreeExpanded && (
+                                  <div className="absolute left-full top-1/2 -translate-y-1/2 w-6 h-[2px] bg-blue-500/40"></div>
+                                )}
+                              </div>
+
+                              {isTreeExpanded && (
+                                <div className="flex flex-col gap-6 pl-4 relative">
+                                  <div className="absolute left-0 top-8 bottom-8 w-[2px] bg-slate-200" />
+                                  {course.years.map((yr, yIdx) => {
+                                    const isYearSelected = academicsYearIndex === yIdx;
+                                    return (
+                                      <div key={yIdx} className="flex items-center gap-4 relative">
+                                        <div className="absolute -left-4 top-1/2 -translate-y-1/2 w-4 h-[2px] bg-slate-200" />
+                                        <button
+                                          onClick={() => {
+                                            if (isYearSelected) {
+                                              setAcademicsYearIndex(null);
+                                              setAcademicsSemIndex(null);
+                                            } else {
+                                              setAcademicsYearIndex(yIdx);
+                                              setAcademicsSemIndex(0);
+                                            }
+                                          }}
+                                          className={`text-left p-4 rounded-xl border transition-all duration-300 w-52 shadow-sm cursor-pointer ${isYearSelected
+                                            ? "bg-amber-50/50 border-[#f59e0b] ring-2 ring-[#f59e0b]/10"
+                                            : "bg-white border-border/80 hover:border-slate-400 hover:bg-slate-50"
+                                            }`}
+                                        >
+                                          <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider mb-1">
+                                            {yr.label}
+                                          </span>
+                                          <span className="text-sm font-bold text-primary block leading-tight">
+                                            {yr.shortName}
+                                          </span>
+                                        </button>
+
+                                        {isYearSelected && (
+                                          <div className="flex flex-col gap-2.5 relative pl-4 animate-in fade-in slide-in-from-left-1 duration-200">
+                                            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-4 h-[2px] bg-blue-500/30"></div>
+                                            <div className="absolute left-0 top-1/4 bottom-1/4 w-[2px] bg-blue-500/30"></div>
+                                            {yr.semesters.map((sem, sIdx) => {
+                                              const isSemSelected = academicsSemIndex === sIdx;
+                                              return (
+                                                <button
+                                                  key={sIdx}
+                                                  onClick={() => setAcademicsSemIndex(sIdx)}
+                                                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all relative z-10 w-24 text-center cursor-pointer ${isSemSelected
+                                                    ? "bg-[#0f172a] text-white shadow-md"
+                                                    : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
+                                                    }`}
+                                                >
+                                                  SEM {sem.num}
+                                                </button>
+                                              );
+                                            })}
+                                          </div>
+                                        )}
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          {selectedSemObj ? (
+                            <div className="flex-1 bg-white rounded-2xl border border-border shadow-md overflow-hidden animate-in fade-in duration-300 min-w-0">
+                              <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-5 py-3 flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                  <Badge className="bg-white/20 hover:bg-white/20 text-white border-none font-bold text-[10px] tracking-widest uppercase">
+                                    SEM {selectedSemObj.num}
+                                  </Badge>
+                                  <h4 className="text-base font-bold font-sans">{selectedSemObj.name}</h4>
+                                </div>
+                                <div className="bg-white/10 px-2.5 py-1 rounded-lg border border-white/15 text-right shrink-0">
+                                  <span className="text-[9px] text-white/70 block uppercase tracking-wider font-semibold leading-none">Credits</span>
+                                  <span className="text-sm font-bold justify-center">{selectedSemObj.credits}</span>
+                                </div>
+                              </div>
+                              <p className="text-xs text-muted-foreground leading-relaxed px-5 py-3 border-b border-border/60">
+                                {selectedSemObj.description}
+                              </p>
+                              <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-3 overflow-y-auto max-h-[480px]">
+                                {selectedSemObj.subjects.map((sub) => (
+                                  <div
+                                    key={sub.code}
+                                    onClick={() => setActiveDetailSubject(sub)}
+                                    className="p-3 rounded-lg border border-border/80 hover:border-[#f59e0b]/50 hover:shadow-sm transition-all duration-200 bg-slate-50/60 cursor-pointer group"
+                                  >
+                                    <div className="flex items-center justify-between gap-2 mb-1.5">
+                                      <span className="text-[9px] font-bold text-slate-400 font-mono tracking-tight">{sub.code}</span>
+                                      <Badge className={`text-[9px] font-bold px-1.5 py-0 rounded ${sub.type === "CORE"
+                                        ? "bg-red-50 text-red-600 border border-red-100"
+                                        : sub.type === "LAB"
+                                          ? "bg-emerald-50 text-emerald-600 border border-emerald-100"
+                                          : sub.type === "PROJECT"
+                                            ? "bg-purple-50 text-purple-600 border border-purple-100"
+                                            : "bg-blue-50 text-blue-600 border border-blue-100"
+                                        }`}>
+                                        {sub.type}
+                                      </Badge>
+                                    </div>
+                                    <h5 className="font-semibold text-primary text-xs leading-snug group-hover:text-[#f59e0b] transition-colors">
+                                      {sub.name}
+                                    </h5>
+                                    <div className="flex items-center gap-3 text-[10px] text-slate-400 font-medium mt-1.5">
+                                      <span className="flex items-center gap-0.5"><Clock className="h-2.5 w-2.5 text-[#f59e0b]" />{sub.hours}h/wk</span>
+                                      <span>{sub.credits} cr</span>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          ) : (
+                            isTreeExpanded && (
+                              <div className="flex-1 flex items-center justify-center min-h-[200px] text-slate-400 text-sm">
+                                ← Select a semester from the tree to view subjects
+                              </div>
+                            )
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {activeTab === "syllabus" && (
+                      <div className="bg-white rounded-2xl border border-border shadow-md p-6 md:p-10">
+                        <div className="mb-8 text-left">
+                          <Badge className="bg-[#f59e0b]/10 text-[#f59e0b] border border-[#f59e0b]/20 font-semibold px-2.5 py-0.5 text-xs rounded-full mb-3 uppercase tracking-wider">
+                            Subject-wise Syllabus
+                          </Badge>
+                          <h3 className="text-2xl md:text-3xl font-bold text-primary font-sans leading-tight">
+                            Subject-wise Syllabus
+                          </h3>
+                          <p className="text-muted-foreground mt-2 text-sm md:text-base">
+                            The detailed syllabus for each subject based on the latest SPPU guidelines.
+                          </p>
+                        </div>
+
+                        <div className="flex gap-2 overflow-x-auto pb-4 mb-8 border-b border-border/80 scrollbar-thin">
+                          {allSemestersList.map((sem, idx) => (
+                            <button
+                              key={idx}
+                              onClick={() => setSyllabusSemIndex(idx)}
+                              className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all ${syllabusSemIndex === idx
+                                ? "bg-[#0f172a] text-white shadow-md"
+                                : "bg-slate-100 text-slate-600 hover:bg-slate-200/70 border border-transparent"
+                                }`}
+                            >
+                              Semester {sem.num}
+                            </button>
+                          ))}
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                          {currentSyllabusSem.subjects.map((sub) => (
+                            <div
+                              key={sub.code}
+                              className="group [perspective:1000px] h-[220px] w-full cursor-pointer"
+                            >
+                              <div className="relative w-full h-full transition-transform duration-500 [transform-style:preserve-3d] group-hover:[transform:rotateY(180deg)]">
+                                <div className="absolute inset-0 w-full h-full [backface-visibility:hidden] bg-white rounded-2xl border border-border/80 p-6 flex flex-col justify-between shadow-sm">
+                                  <div>
+                                    <div className="flex items-center justify-between mb-4">
+                                      <span className="text-[10px] font-bold text-slate-400 font-mono">{sub.code}</span>
+                                      <Badge className={`text-[9px] font-bold px-2 py-0.5 rounded-md ${sub.type === "CORE"
+                                        ? "bg-red-50 text-red-600 border border-red-100"
+                                        : sub.type === "LAB"
+                                          ? "bg-emerald-50 text-emerald-600 border border-emerald-100"
+                                          : "bg-blue-50 text-blue-600 border border-blue-100"
+                                        }`}>
+                                        {sub.type}
+                                      </Badge>
+                                    </div>
+                                    <h4 className="font-bold text-primary text-base font-sans group-hover:text-[#f59e0b] transition-colors leading-snug mb-3">
+                                      {sub.name}
+                                    </h4>
+                                  </div>
+                                  <div className="flex items-center justify-between pt-4 border-t border-border/50">
+                                    <div className="text-slate-300">
+                                      <BookOpen className="w-5 h-5" />
+                                    </div>
+                                    <span className="text-xs font-bold text-slate-500 font-sans">
+                                      {sub.credits} Credits
+                                    </span>
+                                  </div>
+                                </div>
+
+                                <div className="absolute inset-0 w-full h-full [backface-visibility:hidden] [transform:rotateY(180deg)] bg-slate-900 text-white rounded-2xl p-6 flex flex-col justify-between border border-slate-800 shadow-md">
+                                  <div className="text-left">
+                                    <span className="text-[9px] font-bold text-[#f59e0b] font-mono tracking-wider uppercase block mb-1">
+                                      Subject Summary
+                                    </span>
+                                    <p className="text-slate-300 text-xs leading-relaxed line-clamp-4">
+                                      {sub.description || "Detailed syllabus modules covering theoretical concepts, practical application frameworks, and continuous assessments."}
+                                    </p>
+                                  </div>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setActiveDetailSubject(sub);
+                                    }}
+                                    className="w-full py-2 bg-[#f59e0b] hover:bg-[#d97706] text-white text-xs font-bold rounded-lg transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer mt-4"
+                                  >
+                                    View Syllabus Details &rarr;
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {activeTab === "calendar" && (
+                      <div className="bg-white rounded-2xl border border-border shadow-md p-6 md:p-10">
+                        <div className="flex items-center justify-between mb-6">
+                          <div>
+                            <Badge className="bg-purple-50 text-purple-600 border border-purple-100 font-semibold px-2.5 py-0.5 text-xs rounded-full mb-2 uppercase tracking-wider">
+                              Academic Term
+                            </Badge>
+                            <h3 className="text-xl md:text-2xl font-bold text-primary font-sans">
+                              Academic Calendar Schedule
+                            </h3>
+                          </div>
+                          <Calendar className="w-8 h-8 text-[#f59e0b]/40 hidden md:block" />
+                        </div>
+
+                        <div className="overflow-x-auto rounded-xl border border-border/80 shadow-sm bg-white">
+                          <table className="w-full text-left border-collapse">
+                            <thead>
+                              <tr className="bg-slate-50 text-primary border-b border-border">
+                                <th className="p-4 font-bold text-sm md:text-base border-r border-border/40">Event / Activity</th>
+                                <th className="p-4 font-bold text-sm md:text-base border-r border-border/40">Scheduled Dates</th>
+                                <th className="p-4 font-bold text-sm md:text-base text-center">Event Type</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-border/60">
+                              {course.calendar.map((ev, idx) => (
+                                <tr key={idx} className="hover:bg-slate-50/40">
+                                  <td className="p-4 text-xs md:text-sm text-primary font-semibold border-r border-border/40">
+                                    {ev.event}
+                                  </td>
+                                  <td className="p-4 text-xs md:text-sm text-foreground font-medium border-r border-border/40">
+                                    {ev.dates}
+                                  </td>
+                                  <td className="p-4 text-center">
+                                    <span className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-full ${ev.type === "Exam"
+                                      ? "bg-red-50 text-red-600 border border-red-100"
+                                      : ev.type === "Co-curricular"
+                                        ? "bg-blue-50 text-blue-600 border border-blue-100"
+                                        : "bg-emerald-50 text-emerald-600 border border-emerald-100"
+                                      }`}>
+                                      {ev.type}
+                                    </span>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </motion.section>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      )}
 
       {/* Subject Detailed Syllabus Modal/Dialog */}
       <Dialog open={!!activeDetailSubject} onOpenChange={(open) => !open && setActiveDetailSubject(null)}>

@@ -107,7 +107,7 @@ export default function About() {
             </div>
             <div className="md:w-2/3 p-8 md:p-10">
               <h2 className="text-2xl font-bold text-primary mb-2">Message from the Director</h2>
-              <h3 className="text-accent font-semibold mb-6">Mrs. Vidya Bhegade</h3>
+              <h3 className="text-accent font-semibold mb-6">Mrs. Vidya Bhegade (Pursuing Ph.D. in Management (AI in Education))</h3>
               <p className="text-muted-foreground leading-relaxed mb-6 italic">
                 "Welcome to Indrayani Mahavidyalaya. Our institution is committed to providing quality higher education that empowers students — especially those from economically weaker sections — to become confident professionals in today's competitive world. With dedicated faculty, student support services, and a values-driven campus culture, Indrayani Mahavidyalaya is the launchpad for your future."
               </p>

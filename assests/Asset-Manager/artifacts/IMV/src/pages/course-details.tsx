@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useRoute, Link } from "wouter";
-import { useGetFaculty } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -25,11 +24,9 @@ import {
   BookMarked,
   Briefcase,
   GraduationCap,
-  Sparkles,
-  Lock
+  Sparkles
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Terminal } from "@/components/ui/terminal";
 import CourseGraph from "@/components/ui/course-graph";
 import SecurityTerminalEntry from "@/components/ui/SecurityTerminalEntry";
 
@@ -609,80 +606,18 @@ const COURSE_DATA: Record<string, CourseInfo> = {
   }
 };
 
-interface LockedTerminalWrapperProps {
-  isUnlocked: boolean;
-  isVisible: boolean;
-  title?: string;
-  standbyText?: string;
-  children: React.ReactNode;
-}
-
-function LockedTerminalWrapper({
-  isUnlocked,
-  isVisible,
-  title = "TERMINAL SHELL SECURELY LOCKED",
-  standbyText = "INITIALIZING MOTION DETECTION STREAM...",
-  children
-}: LockedTerminalWrapperProps) {
-  return (
-    <div className="relative rounded-2xl overflow-hidden shadow-2xl">
-      <AnimatePresence>
-        {!isUnlocked && (
-          <motion.div
-            initial={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.5 }}
-            className="absolute inset-0 bg-slate-950/95 backdrop-blur-md z-30 flex flex-col items-center justify-center p-6 text-center border border-red-500/20"
-          >
-            <div className="w-12 h-12 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center text-red-500 mb-3 animate-pulse">
-              <Lock className="w-5 h-5" />
-            </div>
-            <div className="text-red-400 font-mono text-xs tracking-widest font-bold uppercase mb-1">
-              [ {title} ]
-            </div>
-            <p className="text-slate-500 text-[10px] font-mono max-w-md">
-              {isVisible 
-                ? "DECRYPTING CORE MODULES... SECURE HANDSHAKE IN PROGRESS."
-                : standbyText
-              }
-            </p>
-          </motion.div>
-        )}
-      </AnimatePresence>
-      {children}
-    </div>
-  );
-}
-
 export default function CourseDetails({ params }: { params?: { id: string } }) {
   const [, routeParams] = useRoute("/courses/:id");
   const courseId = params?.id || routeParams?.id;
   const course = courseId ? COURSE_DATA[courseId] : null;
 
-  const [activeTab, setActiveTab] = useState<"faculty" | "academics" | "syllabus" | "calendar">("faculty");
-  const [crawlerComplete, setCrawlerComplete] = useState<boolean>(false);
+  const [activeTab, setActiveTab] = useState<"academics" | "syllabus" | "calendar">("academics");
 
   // States for Hero terminal unlock sequence
-  const [isHeroUnlocked, setIsHeroUnlocked] = useState<boolean>(false);
-  const [isHeroVisible, setIsHeroVisible] = useState<boolean>(false);
   const [isGraphUnlocked, setIsGraphUnlocked] = useState<boolean>(false);
 
   useEffect(() => {
     setIsGraphUnlocked(false);
-    setIsHeroUnlocked(false);
-    setIsHeroVisible(false);
-    setCrawlerComplete(false);
-
-    let timer: NodeJS.Timeout;
-    if (courseId === "bca" || courseId === "mca") {
-      setIsHeroVisible(true);
-      timer = setTimeout(() => {
-        setIsHeroUnlocked(true);
-      }, 1500); // Auto unlock Hero terminal after 1.5s
-    }
-    return () => {
-      if (timer) clearTimeout(timer);
-    };
   }, [courseId]);
 
   // States for cinematic terminal scroll-trigger and decryption
@@ -704,7 +639,7 @@ export default function CourseDetails({ params }: { params?: { id: string } }) {
         }
       },
       {
-        threshold: 0.1, // Trigger when 10% of the section is visible
+        threshold: 0.15, // Trigger when 15% visible
       }
     );
 
@@ -726,25 +661,6 @@ export default function CourseDetails({ params }: { params?: { id: string } }) {
   // Subject detail popup state
   const [activeDetailSubject, setActiveDetailSubject] = useState<Subject | null>(null);
 
-  // Fallback timer for crawler animation
-  useEffect(() => {
-    let timer: NodeJS.Timeout;
-    if (courseId === "bca" || courseId === "mca") {
-      timer = setTimeout(() => {
-        setCrawlerComplete(true);
-      }, 8000); // 8 seconds fallback
-    }
-    return () => {
-      if (timer) clearTimeout(timer);
-    };
-  }, [courseId]);
-
-  // Fetch live faculty members from API
-  const { data: facultyMembersData, isLoading: isFacultyLoading } = useGetFaculty(
-    course ? { department: course.dbDeptName } : undefined
-  );
-  const liveFaculty = Array.isArray(facultyMembersData) ? facultyMembersData : [];
-
   if (!course) {
     return (
       <AppLayout>
@@ -760,46 +676,6 @@ export default function CourseDetails({ params }: { params?: { id: string } }) {
       </AppLayout>
     );
   }
-
-  // Filter faculty if it is BCA or MCA, select "Computer Applications". If BBA or MBA, select "Management Studies".
-  const matchingLive = liveFaculty.filter((f: any) => {
-    // Direct string match or department categories
-    if (course.shortName === "BCA" || course.shortName === "MCA") {
-      return f.department === "Computer Applications" || f.department === "BCA" || f.department === "MCA";
-    } else {
-      return f.department === "Management Studies" || f.department === "BBA" || f.department === "MBA";
-    }
-  });
-
-  // Sort HODs first
-  const sortedLive = [...matchingLive].sort((a, b) => {
-    if (a.isHOD && !b.isHOD) return -1;
-    if (!a.isHOD && b.isHOD) return 1;
-    return 0;
-  });
-
-  // Pad the faculty roster with beautiful "Dr./Prof. (To be updated)" cards if live count is less than 3
-  const displayFaculty = sortedLive.length >= 3 ? sortedLive : (() => {
-    const paddedList = [...sortedLive];
-    const itemsToNeed = 3 - sortedLive.length;
-
-    for (let i = 0; i < itemsToNeed; i++) {
-      // HOD card fallback if no live HOD exists
-      const needsHOD = !sortedLive.some(f => f.isHOD) && i === 0;
-      paddedList.push({
-        id: -(i + 1),
-        name: needsHOD ? "Dr. (To be updated)" : "Prof. (To be updated)",
-        designation: needsHOD ? "Professor & HOD" : "Assistant Professor",
-        qualification: "Ph.D. / M.B.A. / M.C.A.",
-        specialization: course.shortName,
-        isHOD: needsHOD,
-        photoUrl: "",
-        department: course.dbDeptName,
-        createdAt: new Date().toISOString(),
-      });
-    }
-    return paddedList;
-  })();
 
   // Derived helpers for Tree/Academics tab
   const selectedYearObj = academicsYearIndex !== null ? course.years[academicsYearIndex] : null;
@@ -822,7 +698,7 @@ export default function CourseDetails({ params }: { params?: { id: string } }) {
     hubBorder: isMBA ? "border-[#a855f7]" : "border-[#f59e0b]",
     hubGlow: isMBA ? "shadow-[0_0_20px_rgba(168,85,247,0.2)]" : "shadow-[0_0_20px_rgba(245,158,11,0.2)]",
     hubIcon: isMBA ? "text-[#a855f7]" : "text-[#f59e0b]",
-    
+
     visionGradientStart: isMBA ? "#a855f7" : "#f59e0b",
     visionGradientEnd: isMBA ? "#7e22ce" : "#d97706",
     visionNodeBg: isMBA ? "from-[#a855f7]/20 to-[#7e22ce]/20" : "from-[#f59e0b]/20 to-[#d97706]/20",
@@ -832,7 +708,7 @@ export default function CourseDetails({ params }: { params?: { id: string } }) {
     visionPathColor: isMBA ? "#7e22ce" : "#d97706",
     visionBubbleHeader: isMBA ? "text-[#7e22ce]" : "text-[#d97706]",
     visionBubbleBorderHover: isMBA ? "hover:border-[#a855f7]/40" : "hover:border-[#f59e0b]/40",
-    
+
     missionGradientStart: isMBA ? "#a855f7" : "#f59e0b",
     missionGradientEnd: isMBA ? "#0d9488" : "#0284c7",
     missionNodeBg: isMBA ? "from-[#a855f7]/20 to-[#0d9488]/20" : "from-[#f59e0b]/20 to-[#0284c7]/20",
@@ -842,7 +718,7 @@ export default function CourseDetails({ params }: { params?: { id: string } }) {
     missionPathColor: isMBA ? "#0d9488" : "#0284c7",
     missionItemBorderHover: isMBA ? "hover:border-[#0d9488]/40" : "hover:border-[#0284c7]/40",
     missionItemNumBg: isMBA ? "bg-[#0d9488]/10 text-[#0d9488]" : "bg-[#0284c7]/10 text-[#0284c7]",
-    
+
     bgGlow: isMBA ? "bg-purple-500/5" : "bg-amber-500/5",
     badgeLabel: isMBA ? "bg-purple-50 text-purple-600 border border-purple-100" : "bg-[#f59e0b]/10 text-[#f59e0b] border border-[#f59e0b]/20"
   };
@@ -865,74 +741,6 @@ export default function CourseDetails({ params }: { params?: { id: string } }) {
             <p className="text-base md:text-lg text-primary-foreground/80 leading-relaxed">
               {course.summary}
             </p>
-            {courseId === "bca" && (
-              <div className="mt-8 animate-in fade-in duration-500">
-                <LockedTerminalWrapper
-                  isUnlocked={isHeroUnlocked}
-                  isVisible={isHeroVisible}
-                  title="CRAWLER GATEWAY SECURED"
-                  standbyText="ESTABLISHING SECURE DATABASE HANDSHAKE..."
-                >
-                  <Terminal
-                    active={isHeroUnlocked}
-                    commands={[
-                      "atul-crawler --target=bca",
-                      "fetch --url=edu-imv.vercel.app/courses/bca",
-                      "render --layout"
-                    ]}
-                    outputs={{
-                      0: [
-                        "✔ Connected to Indrayani Mahavidyalaya database...",
-                        "✔ Target: BCA (3 Years)"
-                      ],
-                      1: [
-                        "✔ Extracted 6 Semesters: Programming, Databases, Web Frameworks."
-                      ],
-                      2: [
-                        " [SUCCESS] BCA Course Layout Rendered Live."
-                      ]
-                    }}
-                    typingSpeed={45}
-                    delayBetweenCommands={1000}
-                    onComplete={() => setCrawlerComplete(true)}
-                  />
-                </LockedTerminalWrapper>
-              </div>
-            )}
-            {courseId === "mca" && (
-              <div className="mt-8 animate-in fade-in duration-500">
-                <LockedTerminalWrapper
-                  isUnlocked={isHeroUnlocked}
-                  isVisible={isHeroVisible}
-                  title="CRAWLER GATEWAY SECURED"
-                  standbyText="ESTABLISHING SECURE DATABASE HANDSHAKE..."
-                >
-                  <Terminal
-                    active={isHeroUnlocked}
-                    commands={[
-                      "atul-crawler --target=mca",
-                      "fetch --url=edu-imv.vercel.app/courses/mca",
-                      "deploy --env=production"
-                    ]}
-                    outputs={{
-                      0: [
-                        "✔ Connected to Indrayani Mahavidyalaya database...",
-                        "✔ Target: MCA (2 Years)"
-                      ],
-                      1: [
-                        "✔ Extracted 4 Semesters: Cloud Architectures, Machine Learning, DevOps."
-                      ],
-                      2: [
-                        " [SUCCESS] Production MCA Environment Deployed and Rendered."
-                      ]
-                    }}
-                    typingSpeed={45}
-                    delayBetweenCommands={1000}
-                    onComplete={() => setCrawlerComplete(true)}
-                  />
-                </LockedTerminalWrapper>
-              </div>
-            )}
           </div>
         </div>
       </section>
@@ -976,8 +784,8 @@ export default function CourseDetails({ params }: { params?: { id: string } }) {
 
       {/* BBA & MBA Cinematic Animated Graph Hero */}
       {(courseId === "bba" || courseId === "mba") && (
-        <CourseGraph 
-          type={courseId} 
+        <CourseGraph
+          type={courseId}
           isUnlocked={isGraphUnlocked}
           onComplete={() => setIsGraphUnlocked(true)}
           onReset={() => setIsGraphUnlocked(false)}
@@ -1059,7 +867,7 @@ export default function CourseDetails({ params }: { params?: { id: string } }) {
           <section className="py-16 bg-muted/10 border-t border-border/80">
             <div className="container mx-auto px-4">
               <div className="flex border-b border-border/80 max-w-xl mx-auto mb-12 justify-center">
-                {(["faculty", "academics", "syllabus", "calendar"] as const).map((tab) => (
+                {(["academics", "syllabus", "calendar"] as const).map((tab) => (
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
@@ -1074,71 +882,6 @@ export default function CourseDetails({ params }: { params?: { id: string } }) {
               </div>
 
               <div className="max-w-7xl mx-auto animate-in fade-in duration-300">
-                {activeTab === "faculty" && (
-                  <div className="bg-white rounded-2xl border border-border shadow-md p-6 md:p-10">
-                    <div className="flex flex-col items-center text-center mb-8">
-                      <Badge className="bg-blue-50 text-blue-600 border border-blue-100 font-semibold px-3 py-1 text-xs rounded-full mb-3 uppercase tracking-wider">
-                        Faculty Roster
-                      </Badge>
-                      <h3 className="text-2xl md:text-3xl font-bold text-slate-900 font-sans">
-                        Department Faculty Members
-                      </h3>
-                    </div>
-
-                    {isFacultyLoading ? (
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        {[1, 2, 3].map((i) => (
-                          <div key={i} className="aspect-[3/4] bg-slate-900 border border-slate-800 rounded-2xl animate-pulse flex flex-col justify-end p-6">
-                            <div className="h-6 w-3/4 bg-slate-800 rounded mb-2"></div>
-                            <div className="h-4 w-1/2 bg-slate-800 rounded"></div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        {displayFaculty.map((member) => (
-                          <div
-                            key={member.id}
-                            className="relative overflow-hidden aspect-[3/4] bg-slate-950 border border-slate-800 rounded-2xl flex flex-col justify-end p-6 group cursor-pointer shadow-lg hover:shadow-xl transition-all duration-300"
-                          >
-                            <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none opacity-40"></div>
-                            {member.photoUrl ? (
-                              <img
-                                src={member.photoUrl}
-                                alt={member.name}
-                                className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                              />
-                            ) : (
-                              <div className="absolute inset-0 flex items-center justify-center text-slate-800/20 text-9xl font-bold select-none">
-                                {member.name.charAt(0)}
-                              </div>
-                            )}
-                            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent z-10 opacity-90"></div>
-                            <div className="relative z-20 text-left">
-                              {member.isHOD && (
-                                <span className="inline-block bg-[#f59e0b] text-white text-[10px] font-bold px-2 py-0.5 rounded-full mb-2 uppercase tracking-wide">
-                                  Head of Department
-                                </span>
-                              )}
-                              <h4 className="text-white text-lg font-bold group-hover:text-[#f59e0b] transition-colors leading-tight">
-                                {member.name}
-                              </h4>
-                              <p className="text-slate-400 text-sm mt-1 font-medium">
-                                {member.designation}
-                              </p>
-                              {member.qualification && (
-                                <p className="text-slate-500 text-xs mt-1 truncate">
-                                  {member.qualification}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-
                 {activeTab === "academics" && (
                   <div>
                     <div className="bg-white rounded-2xl border border-border shadow-md p-6 mb-8 text-left">
@@ -1452,7 +1195,7 @@ export default function CourseDetails({ params }: { params?: { id: string } }) {
             >
               {/* Vision & Mission section */}
               {/* Vision & Mission section */}
-              <motion.section 
+              <motion.section
                 variants={{
                   hidden: { opacity: 0, y: 40 },
                   visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] } }
@@ -1462,7 +1205,7 @@ export default function CourseDetails({ params }: { params?: { id: string } }) {
                 {/* Decorative background grid/glows */}
                 <div className="absolute inset-0 bg-[linear-gradient(to_right,#0f172a03_1px,transparent_1px),linear-gradient(to_bottom,#0f172a03_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none opacity-60"></div>
                 <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] ${theme.bgGlow} rounded-full blur-[120px] pointer-events-none`} />
-                
+
                 <div className="container mx-auto px-4 max-w-6xl relative z-10">
                   <div className="text-center mb-16">
                     <Badge className={`${theme.badgeLabel} font-bold px-3 py-1 text-xs rounded-full mb-3 uppercase tracking-wider`}>
@@ -1478,98 +1221,98 @@ export default function CourseDetails({ params }: { params?: { id: string } }) {
 
                   {/* Responsive Graph Tree */}
                   <div className="relative">
-                    {/* Desktop SVG Connecting Lines */}
-                    <svg className="absolute inset-0 w-full h-full pointer-events-none hidden lg:block overflow-visible" style={{ minHeight: '450px' }}>
-                      <defs>
-                        <linearGradient id="gradient-to-vision" x1="50%" y1="0%" x2="0%" y2="100%">
-                          <stop offset="0%" stopColor={theme.visionGradientStart} stopOpacity="0.8" />
-                          <stop offset="100%" stopColor={theme.visionGradientEnd} stopOpacity="0.4" />
-                        </linearGradient>
-                        <linearGradient id="gradient-to-mission" x1="50%" y1="0%" x2="100%" y2="100%">
-                          <stop offset="0%" stopColor={theme.missionGradientStart} stopOpacity="0.8" />
-                          <stop offset="100%" stopColor={theme.missionGradientEnd} stopOpacity="0.4" />
-                        </linearGradient>
-                      </defs>
+                    
+                    {/* Desktop layout with absolute positioning for perfect alignment */}
+                    <div className="hidden lg:block relative w-[1140px] mx-auto h-[460px] overflow-visible select-none">
+                      {/* Desktop SVG Connecting Lines */}
+                      <svg className="absolute inset-0 w-full h-full pointer-events-none overflow-visible">
+                        <defs>
+                          <linearGradient id="gradient-to-vision" x1="50%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" stopColor={theme.visionGradientStart} stopOpacity="0.8" />
+                            <stop offset="100%" stopColor={theme.visionGradientEnd} stopOpacity="0.4" />
+                          </linearGradient>
+                          <linearGradient id="gradient-to-mission" x1="50%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stopColor={theme.missionGradientStart} stopOpacity="0.8" />
+                            <stop offset="100%" stopColor={theme.missionGradientEnd} stopOpacity="0.4" />
+                          </linearGradient>
+                        </defs>
 
-                      {/* Main central hub to Vision Node */}
-                      <motion.path
-                        d="M 550,15 Q 320,15 230,105"
-                        fill="none"
-                        stroke="url(#gradient-to-vision)"
-                        strokeWidth="3"
-                        strokeDasharray="4 4"
-                        initial={{ pathLength: 0 }}
-                        whileInView={{ pathLength: 1 }}
-                        transition={{ duration: 1.5, ease: "easeInOut" }}
-                      />
+                        {/* Main central hub to Vision Node */}
+                        <motion.path
+                          d="M 570,15 Q 330,15 240,105"
+                          fill="none"
+                          stroke="url(#gradient-to-vision)"
+                          strokeWidth="3"
+                          strokeDasharray="4 4"
+                          initial={{ pathLength: 0 }}
+                          whileInView={{ pathLength: 1 }}
+                          transition={{ duration: 1.5, ease: "easeInOut" }}
+                        />
 
-                      {/* Vision Node to Vision Statement Bubble */}
-                      <motion.path
-                        d="M 230,175 L 230,240"
-                        fill="none"
-                        stroke={theme.visionPathColor}
-                        strokeWidth="2.5"
-                        initial={{ pathLength: 0 }}
-                        whileInView={{ pathLength: 1 }}
-                        transition={{ duration: 1, ease: "easeInOut", delay: 0.5 }}
-                      />
+                        {/* Vision Node to Vision Statement Bubble */}
+                        <motion.path
+                          d="M 240,175 L 240,240"
+                          fill="none"
+                          stroke={theme.visionPathColor}
+                          strokeWidth="2.5"
+                          initial={{ pathLength: 0 }}
+                          whileInView={{ pathLength: 1 }}
+                          transition={{ duration: 1, ease: "easeInOut", delay: 0.5 }}
+                        />
 
-                      {/* Main central hub to Mission Node */}
-                      <motion.path
-                        d="M 550,15 Q 780,15 870,105"
-                        fill="none"
-                        stroke="url(#gradient-to-mission)"
-                        strokeWidth="3"
-                        strokeDasharray="4 4"
-                        initial={{ pathLength: 0 }}
-                        whileInView={{ pathLength: 1 }}
-                        transition={{ duration: 1.5, ease: "easeInOut" }}
-                      />
+                        {/* Main central hub to Mission Node */}
+                        <motion.path
+                          d="M 570,15 Q 810,15 900,105"
+                          fill="none"
+                          stroke="url(#gradient-to-mission)"
+                          strokeWidth="3"
+                          strokeDasharray="4 4"
+                          initial={{ pathLength: 0 }}
+                          whileInView={{ pathLength: 1 }}
+                          transition={{ duration: 1.5, ease: "easeInOut" }}
+                        />
 
-                      {/* Mission Node branching to Mission Item 1 */}
-                      <motion.path
-                        d="M 870,175 C 870,205 670,205 670,240"
-                        fill="none"
-                        stroke={theme.missionPathColor}
-                        strokeWidth="2"
-                        initial={{ pathLength: 0 }}
-                        whileInView={{ pathLength: 1 }}
-                        transition={{ duration: 1.2, ease: "easeInOut", delay: 0.6 }}
-                      />
+                        {/* Mission Node branching to Mission Item 1 */}
+                        <motion.path
+                          d="M 900,175 C 900,205 690,205 690,240"
+                          fill="none"
+                          stroke={theme.missionPathColor}
+                          strokeWidth="2"
+                          initial={{ pathLength: 0 }}
+                          whileInView={{ pathLength: 1 }}
+                          transition={{ duration: 1.2, ease: "easeInOut", delay: 0.6 }}
+                        />
 
-                      {/* Mission Node branching to Mission Item 2 */}
-                      <motion.path
-                        d="M 870,175 L 870,240"
-                        fill="none"
-                        stroke={theme.missionPathColor}
-                        strokeWidth="2"
-                        initial={{ pathLength: 0 }}
-                        whileInView={{ pathLength: 1 }}
-                        transition={{ duration: 1.2, ease: "easeInOut", delay: 0.6 }}
-                      />
+                        {/* Mission Node branching to Mission Item 2 */}
+                        <motion.path
+                          d="M 900,175 L 900,240"
+                          fill="none"
+                          stroke={theme.missionPathColor}
+                          strokeWidth="2"
+                          initial={{ pathLength: 0 }}
+                          whileInView={{ pathLength: 1 }}
+                          transition={{ duration: 1.2, ease: "easeInOut", delay: 0.6 }}
+                        />
 
-                      {/* Mission Node branching to Mission Item 3 */}
-                      <motion.path
-                        d="M 870,175 C 870,205 1070,205 1070,240"
-                        fill="none"
-                        stroke={theme.missionPathColor}
-                        strokeWidth="2"
-                        initial={{ pathLength: 0 }}
-                        whileInView={{ pathLength: 1 }}
-                        transition={{ duration: 1.2, ease: "easeInOut", delay: 0.6 }}
-                      />
-                    </svg>
+                        {/* Mission Node branching to Mission Item 3 */}
+                        <motion.path
+                          d="M 900,175 C 900,205 1110,205 1110,240"
+                          fill="none"
+                          stroke={theme.missionPathColor}
+                          strokeWidth="2"
+                          initial={{ pathLength: 0 }}
+                          whileInView={{ pathLength: 1 }}
+                          transition={{ duration: 1.2, ease: "easeInOut", delay: 0.6 }}
+                        />
+                      </svg>
 
-                    {/* Nodes Container */}
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-0 lg:min-h-[480px] relative">
-                      
-                      {/* Top Row: Central Hub */}
-                      <div className="lg:col-span-12 flex justify-center mb-8 lg:mb-0 lg:h-16">
+                      {/* Central Hub */}
+                      <div className="absolute left-[450px] top-[10px] w-[240px] flex justify-center z-20">
                         <motion.div
                           initial={{ opacity: 0, y: -20 }}
                           whileInView={{ opacity: 1, y: 0 }}
                           transition={{ duration: 0.6 }}
-                          className={`bg-[#0f172a] border-2 ${theme.hubBorder} ${theme.hubGlow} rounded-full px-6 py-2.5 flex items-center gap-2.5 relative z-20`}
+                          className={`bg-[#0f172a] border-2 ${theme.hubBorder} ${theme.hubGlow} rounded-full px-6 py-2.5 flex items-center justify-center gap-2.5 w-full`}
                         >
                           <Sparkles className={`w-4 h-4 ${theme.hubIcon} animate-pulse`} />
                           <span className="text-white font-extrabold text-xs md:text-sm uppercase tracking-widest font-mono">
@@ -1578,64 +1321,119 @@ export default function CourseDetails({ params }: { params?: { id: string } }) {
                         </motion.div>
                       </div>
 
-                      {/* Left Column: Vision Branch */}
-                      <div className="lg:col-span-5 flex flex-col items-center">
-                        {/* Vision Main Node */}
-                        <motion.div
-                          initial={{ opacity: 0, scale: 0.8 }}
-                          whileInView={{ opacity: 1, scale: 1 }}
-                          transition={{ duration: 0.5, delay: 0.3 }}
-                          className={`w-20 h-20 rounded-full bg-gradient-to-br ${theme.visionNodeBg} border-2 ${theme.visionNodeBorder} flex items-center justify-center ${theme.visionNodeText} ${theme.visionNodeGlow} relative z-10 mb-8 lg:mb-12 hover:scale-105 transition-transform`}
-                        >
+                      {/* Vision Main Node */}
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        whileInView={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.5, delay: 0.3 }}
+                        className={`absolute left-[200px] top-[105px] w-20 h-20 rounded-full bg-gradient-to-br ${theme.visionNodeBg} border-2 ${theme.visionNodeBorder} flex items-center justify-center ${theme.visionNodeText} ${theme.visionNodeGlow} z-10 hover:scale-105 transition-transform`}
+                      >
+                        <div className="flex flex-col items-center">
+                          <Eye className="h-6 w-6" />
+                          <span className="text-[9px] font-bold tracking-wider mt-1 uppercase font-mono">Vision</span>
+                        </div>
+                      </motion.div>
+
+                      {/* Vision Statement Bubble */}
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.6, delay: 0.6 }}
+                        className={`absolute left-[40px] top-[240px] w-[400px] bg-white border border-slate-200/80 p-6 rounded-2xl shadow-lg hover:shadow-xl ${theme.visionBubbleBorderHover} transition-all duration-300 text-center z-10`}
+                      >
+                        <h4 className={`font-extrabold ${theme.visionBubbleHeader} text-sm uppercase tracking-wider mb-2.5`}>
+                          Our Vision Statement
+                        </h4>
+                        <p className="text-slate-600 text-xs md:text-sm leading-relaxed font-medium">
+                          {course.vision}
+                        </p>
+                      </motion.div>
+
+                      {/* Mission Main Node */}
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        whileInView={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.5, delay: 0.3 }}
+                        className={`absolute left-[860px] top-[105px] w-20 h-20 rounded-full bg-gradient-to-br ${theme.missionNodeBg} border-2 ${theme.missionNodeBorder} flex items-center justify-center ${theme.missionNodeText} ${theme.missionNodeGlow} z-10 hover:scale-105 transition-transform`}
+                      >
+                        <div className="flex flex-col items-center">
+                          <Target className="h-6 w-6" />
+                          <span className="text-[9px] font-bold tracking-wider mt-1 uppercase font-mono">Mission</span>
+                        </div>
+                      </motion.div>
+
+                      {/* Mission Pillars */}
+                      {course.mission.map((m, idx) => {
+                        const positions = [
+                          "left-[592.5px] w-[195px]",
+                          "left-[802.5px] w-[195px]",
+                          "left-[1012.5px] w-[195px]"
+                        ];
+                        return (
+                          <motion.div
+                            key={idx}
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.6, delay: 0.6 + idx * 0.2 }}
+                            className={`absolute top-[240px] ${positions[idx]} bg-white border border-slate-200/80 p-5 rounded-2xl shadow-md hover:shadow-lg ${theme.missionItemBorderHover} transition-all duration-300 flex flex-col text-left z-10 min-h-[195px]`}
+                          >
+                            <div className="flex items-center gap-3 mb-3">
+                              <div className={`w-6 h-6 rounded-full ${theme.missionItemNumBg} flex items-center justify-center font-bold text-xs font-mono`}>
+                                {idx + 1}
+                              </div>
+                              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Mission Pillar</span>
+                            </div>
+                            <p className="text-slate-600 text-xs leading-relaxed font-medium">
+                              {m}
+                            </p>
+                          </motion.div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Mobile layout with responsive stacked items */}
+                    <div className="block lg:hidden space-y-8">
+                      {/* Central Hub */}
+                      <div className="flex justify-center">
+                        <div className={`bg-[#0f172a] border-2 ${theme.hubBorder} ${theme.hubGlow} rounded-full px-6 py-2.5 flex items-center gap-2.5`}>
+                          <Sparkles className={`w-4 h-4 ${theme.hubIcon} animate-pulse`} />
+                          <span className="text-white font-extrabold text-xs uppercase tracking-widest font-mono">
+                            {course.shortName} Strategic Hub
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Vision Section */}
+                      <div className="flex flex-col items-center">
+                        <div className={`w-20 h-20 rounded-full bg-gradient-to-br ${theme.visionNodeBg} border-2 ${theme.visionNodeBorder} flex items-center justify-center ${theme.visionNodeText} mb-4`}>
                           <div className="flex flex-col items-center">
                             <Eye className="h-6 w-6" />
                             <span className="text-[9px] font-bold tracking-wider mt-1 uppercase font-mono">Vision</span>
                           </div>
-                        </motion.div>
-
-                        {/* Vision Statement Node */}
-                        <motion.div
-                          initial={{ opacity: 0, y: 20 }}
-                          whileInView={{ opacity: 1, y: 0 }}
-                          transition={{ duration: 0.6, delay: 0.6 }}
-                          className={`bg-white border border-slate-200/80 p-6 md:p-8 rounded-2xl shadow-lg hover:shadow-xl ${theme.visionBubbleBorderHover} transition-all duration-300 max-w-sm text-center relative z-10`}
-                        >
+                        </div>
+                        <div className={`bg-white border border-slate-200/80 p-6 rounded-2xl shadow-md text-center max-w-md`}>
                           <h4 className={`font-extrabold ${theme.visionBubbleHeader} text-sm uppercase tracking-wider mb-2.5`}>
                             Our Vision Statement
                           </h4>
                           <p className="text-slate-600 text-xs md:text-sm leading-relaxed font-medium">
                             {course.vision}
                           </p>
-                        </motion.div>
+                        </div>
                       </div>
 
-                      {/* Center gap to balance Grid columns */}
-                      <div className="hidden lg:block lg:col-span-2"></div>
-
-                      {/* Right Column: Mission Branch */}
-                      <div className="lg:col-span-5 flex flex-col items-center">
-                        {/* Mission Main Node */}
-                        <motion.div
-                          initial={{ opacity: 0, scale: 0.8 }}
-                          whileInView={{ opacity: 1, scale: 1 }}
-                          transition={{ duration: 0.5, delay: 0.3 }}
-                          className={`w-20 h-20 rounded-full bg-gradient-to-br ${theme.missionNodeBg} border-2 ${theme.missionNodeBorder} flex items-center justify-center ${theme.missionNodeText} ${theme.missionNodeGlow} relative z-10 mb-8 lg:mb-12 hover:scale-105 transition-transform`}
-                        >
+                      {/* Mission Section */}
+                      <div className="flex flex-col items-center">
+                        <div className={`w-20 h-20 rounded-full bg-gradient-to-br ${theme.missionNodeBg} border-2 ${theme.missionNodeBorder} flex items-center justify-center ${theme.missionNodeText} mb-4`}>
                           <div className="flex flex-col items-center">
                             <Target className="h-6 w-6" />
                             <span className="text-[9px] font-bold tracking-wider mt-1 uppercase font-mono">Mission</span>
                           </div>
-                        </motion.div>
-
-                        {/* Mission Points */}
-                        <div className="flex flex-col lg:flex-row gap-6 w-full relative z-10 items-stretch lg:items-start lg:justify-center">
+                        </div>
+                        <div className="flex flex-col gap-4 w-full max-w-md">
                           {course.mission.map((m, idx) => (
-                            <motion.div
+                            <div
                               key={idx}
-                              initial={{ opacity: 0, y: 20 }}
-                              whileInView={{ opacity: 1, y: 0 }}
-                              transition={{ duration: 0.6, delay: 0.6 + idx * 0.2 }}
-                              className={`bg-white border border-slate-200/80 p-5 rounded-2xl shadow-md hover:shadow-lg ${theme.missionItemBorderHover} transition-all duration-300 flex-1 max-w-xs flex flex-col text-left`}
+                              className={`bg-white border border-slate-200/80 p-5 rounded-2xl shadow-sm hover:shadow-md ${theme.missionItemBorderHover} flex flex-col text-left`}
                             >
                               <div className="flex items-center gap-3 mb-3">
                                 <div className={`w-6 h-6 rounded-full ${theme.missionItemNumBg} flex items-center justify-center font-bold text-xs font-mono`}>
@@ -1646,19 +1444,19 @@ export default function CourseDetails({ params }: { params?: { id: string } }) {
                               <p className="text-slate-600 text-xs leading-relaxed font-medium">
                                 {m}
                               </p>
-                            </motion.div>
+                            </div>
                           ))}
                         </div>
                       </div>
-
                     </div>
+
                   </div>
                 </div>
               </motion.section>
 
               {/* Programme Outcomes section */}
               {course.programOutcomes && (
-                <motion.section 
+                <motion.section
                   variants={{
                     hidden: { opacity: 0, y: 40 },
                     visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] } }
@@ -1721,7 +1519,7 @@ export default function CourseDetails({ params }: { params?: { id: string } }) {
               )}
 
               {/* Tabs Layout */}
-              <motion.section 
+              <motion.section
                 variants={{
                   hidden: { opacity: 0, y: 40 },
                   visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] } }
@@ -1730,7 +1528,7 @@ export default function CourseDetails({ params }: { params?: { id: string } }) {
               >
                 <div className="container mx-auto px-4">
                   <div className="flex border-b border-border/80 max-w-xl mx-auto mb-12 justify-center">
-                    {(["faculty", "academics", "syllabus", "calendar"] as const).map((tab) => (
+                    {(["academics", "syllabus", "calendar"] as const).map((tab) => (
                       <button
                         key={tab}
                         onClick={() => setActiveTab(tab)}
@@ -1743,73 +1541,7 @@ export default function CourseDetails({ params }: { params?: { id: string } }) {
                       </button>
                     ))}
                   </div>
-
                   <div className="max-w-7xl mx-auto animate-in fade-in duration-300">
-                    {activeTab === "faculty" && (
-                      <div className="bg-white rounded-2xl border border-border shadow-md p-6 md:p-10">
-                        <div className="flex flex-col items-center text-center mb-8">
-                          <Badge className="bg-blue-50 text-blue-600 border border-blue-100 font-semibold px-3 py-1 text-xs rounded-full mb-3 uppercase tracking-wider">
-                            Faculty Roster
-                          </Badge>
-                          <h3 className="text-2xl md:text-3xl font-bold text-slate-900 font-sans">
-                            Department Faculty Members
-                          </h3>
-                        </div>
-
-                        {isFacultyLoading ? (
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            {[1, 2, 3].map((i) => (
-                              <div key={i} className="aspect-[3/4] bg-slate-900 border border-slate-800 rounded-2xl animate-pulse flex flex-col justify-end p-6">
-                                <div className="h-6 w-3/4 bg-slate-800 rounded mb-2"></div>
-                                <div className="h-4 w-1/2 bg-slate-800 rounded"></div>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            {displayFaculty.map((member) => (
-                              <div
-                                key={member.id}
-                                className="relative overflow-hidden aspect-[3/4] bg-slate-950 border border-slate-800 rounded-2xl flex flex-col justify-end p-6 group cursor-pointer shadow-lg hover:shadow-xl transition-all duration-300"
-                              >
-                                <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none opacity-40"></div>
-                                {member.photoUrl ? (
-                                  <img
-                                    src={member.photoUrl}
-                                    alt={member.name}
-                                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                                  />
-                                ) : (
-                                  <div className="absolute inset-0 flex items-center justify-center text-slate-800/20 text-9xl font-bold select-none">
-                                    {member.name.charAt(0)}
-                                  </div>
-                                )}
-                                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent z-10 opacity-90"></div>
-                                <div className="relative z-20 text-left">
-                                  {member.isHOD && (
-                                    <span className="inline-block bg-[#f59e0b] text-white text-[10px] font-bold px-2 py-0.5 rounded-full mb-2 uppercase tracking-wide">
-                                      Head of Department
-                                    </span>
-                                  )}
-                                  <h4 className="text-white text-lg font-bold group-hover:text-[#f59e0b] transition-colors leading-tight">
-                                    {member.name}
-                                  </h4>
-                                  <p className="text-slate-400 text-sm mt-1 font-medium">
-                                    {member.designation}
-                                  </p>
-                                  {member.qualification && (
-                                    <p className="text-slate-500 text-xs mt-1 truncate">
-                                      {member.qualification}
-                                    </p>
-                                  )}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    )}
-
                     {activeTab === "academics" && (
                       <div>
                         <div className="bg-white rounded-2xl border border-border shadow-md p-6 mb-8 text-left">

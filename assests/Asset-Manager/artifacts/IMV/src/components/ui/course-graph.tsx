@@ -20,9 +20,22 @@ interface Milestone {
 export const CourseGraph: React.FC<CourseGraphProps> = ({ type, onComplete, onReset, isUnlocked = false }) => {
   const [inView, setInView] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [isZooming, setIsZooming] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Viewport detection that resets when scrolling completely away
+  // Store unstable callbacks in refs to avoid restarting effects
+  const onCompleteRef = useRef(onComplete);
+  const onResetRef = useRef(onReset);
+
+  useEffect(() => {
+    onCompleteRef.current = onComplete;
+  }, [onComplete]);
+
+  useEffect(() => {
+    onResetRef.current = onReset;
+  }, [onReset]);
+
+  // Viewport detection that resets when scrolling completely away (only if not unlocked)
   useEffect(() => {
     const element = containerRef.current;
     if (!element) return;
@@ -32,9 +45,12 @@ export const CourseGraph: React.FC<CourseGraphProps> = ({ type, onComplete, onRe
         if (entry.isIntersecting) {
           setInView(true);
         } else if (entry.intersectionRatio === 0) {
-          setInView(false);
-          setProgress(0);
-          if (onReset) onReset();
+          if (!isUnlocked) {
+            setInView(false);
+            setProgress(0);
+            setIsZooming(false);
+            if (onResetRef.current) onResetRef.current();
+          }
         }
       },
       { threshold: [0, 0.1, 0.8] }
@@ -44,7 +60,7 @@ export const CourseGraph: React.FC<CourseGraphProps> = ({ type, onComplete, onRe
     return () => {
       if (element) observer.unobserve(element);
     };
-  }, []);
+  }, [isUnlocked]);
 
   // Animate progress when in view
   useEffect(() => {
@@ -63,16 +79,28 @@ export const CourseGraph: React.FC<CourseGraphProps> = ({ type, onComplete, onRe
       if (nextProgress < 1) {
         requestAnimationFrame(animate);
       } else {
-        // Pause for a beat then complete
+        // Pause for a beat then start the zoom-out transition
         setTimeout(() => {
-          if (onComplete) onComplete();
-        }, 600);
+          setIsZooming(true);
+          // After zoom transition ends, call onComplete
+          setTimeout(() => {
+            if (onCompleteRef.current) onCompleteRef.current();
+          }, 1200);
+        }, 800);
       }
     };
 
     const animationFrame = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(animationFrame);
-  }, [inView, isUnlocked, onComplete]);
+  }, [inView, isUnlocked]);
+
+  // Reset internal states when the course type changes or when it is relocked
+  useEffect(() => {
+    if (!isUnlocked) {
+      setProgress(0);
+      setIsZooming(false);
+    }
+  }, [type, isUnlocked]);
 
   // Milestone Definitions
   const milestones: Milestone[] = [
@@ -97,11 +125,10 @@ export const CourseGraph: React.FC<CourseGraphProps> = ({ type, onComplete, onRe
   return (
     <div
       ref={containerRef}
-      className={`w-full transition-all duration-1000 ${
-        isUnlocked 
-          ? "bg-slate-950/80 border-b border-orange-500/20 py-4 sticky top-0 z-50 backdrop-blur-md" 
+      className={`w-full transition-all duration-1000 ${isUnlocked
+          ? "bg-slate-950 border-b border-orange-500/20 py-4 w-full relative"
           : "bg-[#0b1329] py-16 px-4 md:px-12 min-h-[60vh] flex flex-col justify-center items-center relative overflow-hidden"
-      }`}
+        }`}
     >
       {/* Ambient background lights in hero mode */}
       {!isUnlocked && (
@@ -136,8 +163,15 @@ export const CourseGraph: React.FC<CourseGraphProps> = ({ type, onComplete, onRe
           /* CINEMATIC HERO MODE */
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.8 }}
+            animate={isZooming
+              ? {
+                scale: 3.5,
+                opacity: 0,
+                filter: "blur(4px)",
+                transition: { duration: 1.2, ease: [0.76, 0, 0.24, 1] }
+              }
+              : { opacity: 1, scale: 1 }
+            }
             className="w-full bg-[#121824]/60 border border-slate-800/80 rounded-3xl p-6 md:p-10 shadow-2xl relative overflow-hidden backdrop-blur-sm"
           >
             {/* Header Title Layer */}
@@ -270,9 +304,8 @@ export const CourseGraph: React.FC<CourseGraphProps> = ({ type, onComplete, onRe
                         top: `${(m.y / 200) * 100}%`,
                         transform: 'translate(-50%, -125%)',
                       }}
-                      className={`w-44 text-center transition-all duration-700 pointer-events-none select-none ${
-                        reached ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
-                      }`}
+                      className={`w-44 text-center transition-all duration-700 pointer-events-none select-none ${reached ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+                        }`}
                     >
                       <div className="bg-[#121824]/95 border border-orange-500/30 p-2.5 rounded-xl shadow-lg backdrop-blur-md flex flex-col items-center">
                         <div className="w-7 h-7 rounded-lg bg-orange-500/10 flex items-center justify-center mb-1">

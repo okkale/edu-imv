@@ -41,6 +41,7 @@ async function seed() {
     eligibility:
       "Passed 10+2 or equivalent examination from a recognized board as per university norms.",
     fees: "As per university and government norms.",
+    image_url: "/bba.png",
     is_active: true,
   },
   {
@@ -54,6 +55,7 @@ async function seed() {
     eligibility:
       "Passed 10+2 or equivalent examination from a recognized board as per university norms.",
     fees: "As per university and government norms.",
+    image_url: "/bca.png",
     is_active: true,
   },
   {
@@ -67,6 +69,7 @@ async function seed() {
     eligibility:
       "Bachelor's degree from a recognized university. Admission as per State CET Cell / university guidelines.",
     fees: "As per government and university norms.",
+    image_url: "/mba.png",
     is_active: true,
   },
   {
@@ -80,15 +83,16 @@ async function seed() {
     eligibility:
       "Bachelor's degree with Mathematics at 10+2 or graduation level. Admission as per State CET Cell / university guidelines.",
     fees: "As per government and university norms.",
+    image_url: "/mca.png",
     is_active: true,
   },
     ];
 
     for (const c of courses) {
       await client.query(
-        `INSERT INTO courses (name, department, type, duration, seats, description, eligibility, fees, is_active)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
-        [c.name, c.department, c.type, c.duration, c.seats, c.description, c.eligibility, c.fees, c.is_active]
+        `INSERT INTO courses (name, department, type, duration, seats, description, eligibility, fees, image_url, is_active)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
+        [c.name, c.department, c.type, c.duration, c.seats, c.description, c.eligibility, c.fees, c.image_url, c.is_active]
       );
     }
     console.log("✓ 4 courses seeded");

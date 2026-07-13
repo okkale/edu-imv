@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Menu, X, ChevronDown, Phone, Mail } from "lucide-react";
+import { Menu, X, ChevronDown, Phone, Mail, Users } from "lucide-react";
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 
@@ -40,8 +40,8 @@ export function Navbar() {
 
   const navLinksAfter = [
     { href: "/placements", label: "Placements" },
-    { href: "/naac", label: "NAAC" },
-    { href: "/support", label: "Support" },
+    // { href: "/naac", label: "NAAC" },
+    // { href: "/support", label: "Support" },
     { href: "/news", label: "News & Events" },
     { href: "/media", label: "Gallery" },
     { href: "/contact", label: "Contact" },
@@ -99,28 +99,37 @@ export function Navbar() {
           >
             <Link href="/academics">
               <span className={`flex items-center justify-center gap-0.5 lg:gap-1 px-1 lg:px-1.5 xl:px-2.5 py-2 rounded-md text-[10px] lg:text-[11px] xl:text-xs 2xl:text-sm font-medium transition-colors hover:bg-muted whitespace-nowrap ${location.startsWith("/academics") || location.startsWith("/courses") ? "text-accent font-semibold" : "text-foreground"}`}>
-                Courses <ChevronDown className="h-3 w-3 md:h-3.5 md:w-3.5" />
+                Departments <ChevronDown className="h-3 w-3 md:h-3.5 md:w-3.5" />
               </span>
             </Link>
 
             {showMegaMenu && (
-              <div className="absolute top-full left-1/2 -translate-x-1/2 w-[400px] bg-background border border-border rounded-lg shadow-lg p-4 mt-1 grid grid-cols-2 gap-2 animate-in fade-in zoom-in-95 duration-200">
-                <div className="col-span-2 mb-2 pb-2 border-b border-border">
-                  <h3 className="font-semibold text-primary">Academic Departments</h3>
+              <div className="absolute top-full left-1/2 -translate-x-1/2 w-[280px] bg-background border border-border rounded-lg shadow-lg p-3.5 mt-1 flex flex-col gap-2.5 animate-in fade-in zoom-in-95 duration-200 z-50">
+                <div>
+                  <h3 className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 font-mono">DEPARTMENTS</h3>
+                  <Link href="/faculty">
+                    <div
+                      onClick={() => setShowMegaMenu(false)}
+                      className="flex items-center gap-2.5 p-1.5 bg-[#fffbe6] border border-[#fde68a]/30 rounded-lg hover:bg-[#fff7d6] transition-colors cursor-pointer group"
+                    >
+                      <div className="w-7 h-7 rounded-md bg-[#ffeaa7]/40 flex items-center justify-center text-[#f59e0b] shrink-0">
+                        <Users className="w-4 h-4" />
+                      </div>
+                      <span className="font-bold text-[#e08a00] text-[13px] group-hover:text-[#b26e00] transition-colors">
+                        Our Faculty
+                      </span>
+                    </div>
+                  </Link>
                 </div>
-                {DEPARTMENTS.map((dept) => (
-                  <Link key={dept.id} href={`/courses/${dept.id}`}>
-                    <span className="block px-3 py-2 rounded-md text-sm hover:bg-muted hover:text-accent transition-colors">
-                      {dept.name}
-                    </span>
-                  </Link>
-                ))}
-                <div className="col-span-2 mt-2 pt-2 border-t border-border">
-                  <Link href="/courses">
-                    <span className="block px-3 py-2 rounded-md text-sm font-medium text-accent hover:underline text-center">
-                      View Academic Programs &rarr;
-                    </span>
-                  </Link>
+
+                <div className="border-t border-border/80 pt-2 grid grid-cols-2 gap-1">
+                  {DEPARTMENTS.map((dept) => (
+                    <Link key={dept.id} href={`/courses/${dept.id}`} onClick={() => setShowMegaMenu(false)}>
+                      <span className="block px-3 py-1.5 rounded-md text-[13px] hover:bg-muted hover:text-accent transition-colors text-foreground font-semibold">
+                        {dept.name}
+                      </span>
+                    </Link>
+                  ))}
                 </div>
               </div>
             )}
@@ -241,6 +250,9 @@ export function Navbar() {
             </Link>
             <Link href="/courses">
               <span className="block px-4 py-2 rounded-md text-base font-medium hover:bg-muted" onClick={() => setIsOpen(false)}>Courses</span>
+            </Link>
+            <Link href="/faculty">
+              <span className="block px-4 py-2 rounded-md text-base font-medium hover:bg-muted" onClick={() => setIsOpen(false)}>Our Faculty</span>
             </Link>
             {navLinksBefore.map((link) => (
               <Link key={link.href} href={link.href}>

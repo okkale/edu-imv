@@ -7,6 +7,21 @@ import { useGetCourses, useGetNews, useGetDashboardStats } from "@workspace/api-
 import { useState } from "react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 
+const getCourseSlug = (courseName: string) => {
+  const nameLower = courseName.toLowerCase();
+  if (nameLower.includes("bca")) return "bca";
+  if (nameLower.includes("mca")) return "mca";
+  if (nameLower.includes("bba")) return "bba";
+  if (nameLower.includes("mba")) return "mba";
+  return "";
+};
+
+const getCourseImage = (courseName: string, imageUrl?: string | null) => {
+  if (imageUrl) return imageUrl;
+  const slug = getCourseSlug(courseName);
+  return slug ? `/${slug}.png` : "/ymkcoe_logo.png";
+};
+
 export default function Home() {
   const { data: courses = [] } = useGetCourses();
   const { data: news = [] } = useGetNews({ category: "announcement" });
@@ -21,7 +36,7 @@ export default function Home() {
     message: string;
   } | null>(null);
 
-  const featuredCourses = Array.isArray(courses) ? courses.slice(0, 3) : [];
+  const featuredCourses = Array.isArray(courses) ? courses.slice(0, 4) : [];
   const recentNews = Array.isArray(news) ? news.slice(0, 3) : [];
 
   return (
@@ -318,7 +333,7 @@ Indrayani Vidya Mandir.`
           <div className="text-center max-w-3xl mx-auto mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-primary mb-4">Why Choose Indrayani Mahavidyalaya?</h2>
             <p className="text-lg text-muted-foreground">
-              We don't just teach engineering; we cultivate a mindset of innovation, critical thinking, and practical problem-solving.
+              We don't just teach business and technology; we empower students to think critically, lead confidently, and succeed professionally.
             </p>
           </div>
 
@@ -341,7 +356,7 @@ Indrayani Vidya Mandir.`
                 </div>
                 <h3 className="text-xl font-bold mb-3">State-of-the-Art Labs</h3>
                 <p className="text-muted-foreground leading-relaxed">
-                  Experience hands-on learning in our modern laboratories equipped with the latest technology and industrial-grade equipment.
+                  Experience practical learning through modern computer laboratories, industry-oriented projects, workshops, and skill development programs designed for real-world success.
                 </p>
               </CardContent>
             </Card>
@@ -379,22 +394,32 @@ Indrayani Vidya Mandir.`
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {featuredCourses.length > 0 ? featuredCourses.map((course) => (
-                <Card key={course.id} className="overflow-hidden group cursor-pointer border-border hover:border-primary/20 transition-all shadow-sm hover:shadow-md">
-                  <div className="h-48 bg-muted relative overflow-hidden">
-                    <div className="absolute inset-0 bg-primary/10 group-hover:bg-transparent transition-colors z-10"></div>
-                    {/* Placeholder image */}
-                  </div>
-                  <CardContent className="p-6">
-                    <div className="text-xs font-semibold text-accent uppercase tracking-wider mb-2">{course.department}</div>
-                    <h3 className="text-xl font-bold mb-2 group-hover:text-primary transition-colors">{course.name}</h3>
-                    <div className="flex items-center text-sm text-muted-foreground gap-4">
-                      <span className="flex items-center"><Calendar className="h-4 w-4 mr-1" /> {course.duration}</span>
-                      <span className="flex items-center"><Users className="h-4 w-4 mr-1" /> {course.seats} Seats</span>
-                    </div>
-                  </CardContent>
-                </Card>
-              )) : (
+              {featuredCourses.length > 0 ? featuredCourses.map((course) => {
+                const slug = getCourseSlug(course.name);
+                const imageSrc = getCourseImage(course.name, course.imageUrl);
+                return (
+                  <Link key={course.id} href={`/courses/${slug}`}>
+                    <Card className="overflow-hidden group cursor-pointer border-border hover:border-primary/20 transition-all shadow-sm hover:shadow-md h-full">
+                      <div className="h-48 bg-muted relative overflow-hidden">
+                        <div className="absolute inset-0 bg-primary/10 group-hover:bg-transparent transition-colors z-10"></div>
+                        <img
+                          src={imageSrc}
+                          alt={course.name}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                      </div>
+                      <CardContent className="p-6">
+                        <div className="text-xs font-semibold text-accent uppercase tracking-wider mb-2">{course.department}</div>
+                        <h3 className="text-xl font-bold mb-2 group-hover:text-primary transition-colors">{course.name}</h3>
+                        <div className="flex items-center text-sm text-muted-foreground gap-4">
+                          <span className="flex items-center"><Calendar className="h-4 w-4 mr-1" /> {course.duration}</span>
+                          <span className="flex items-center"><Users className="h-4 w-4 mr-1" /> {course.seats} Seats</span>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                );
+              }) : (
                 <div className="col-span-2 text-center py-12 text-muted-foreground bg-muted/20 rounded-lg border border-dashed">
                   No courses available at the moment.
                 </div>

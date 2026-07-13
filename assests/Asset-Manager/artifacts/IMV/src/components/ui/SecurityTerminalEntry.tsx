@@ -86,12 +86,20 @@ export default function SecurityTerminalEntry({
 }: SecurityTerminalEntryProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const terminalBodyRef = useRef<HTMLDivElement>(null);
+  const motionResolverRef = useRef<(() => void) | null>(null);
 
   // States
   const [isVisible, setIsVisible] = useState(false);
   const [terminalLines, setTerminalLines] = useState<string[]>([]);
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [bootStep, setBootStep] = useState(0); // 0: standby, 1: booting logs, 2: waiting motion, 3: motion detected, 4: typing code, 5: complete
+
+  const handleMouseMove = () => {
+    if (motionResolverRef.current) {
+      motionResolverRef.current();
+      motionResolverRef.current = null;
+    }
+  };
 
   // Intersection Observer to detect scroll visibility and trigger reset
   useEffect(() => {
@@ -105,6 +113,7 @@ export default function SecurityTerminalEntry({
           setIsUnlocked(false);
           setTerminalLines([]);
           setBootStep(0);
+          motionResolverRef.current = null;
         }
       },
       {
@@ -132,6 +141,7 @@ export default function SecurityTerminalEntry({
       setTerminalLines([]);
       setBootStep(0);
       setIsUnlocked(false);
+      motionResolverRef.current = null;
       return;
     }
 
@@ -150,7 +160,7 @@ export default function SecurityTerminalEntry({
       for (let i = 0; i < initialLogs.length; i++) {
         if (!isMounted) return;
         await new Promise((resolve) => {
-          const id = setTimeout(resolve, 600);
+          const id = setTimeout(resolve, 150);
           timeoutIds.push(id);
         });
         if (!isMounted) return;
@@ -160,25 +170,31 @@ export default function SecurityTerminalEntry({
       // 2. Waiting for Motion
       if (!isMounted) return;
       await new Promise((resolve) => {
-        const id = setTimeout(resolve, 500);
+        const id = setTimeout(resolve, 100);
         timeoutIds.push(id);
       });
       if (!isMounted) return;
       setTerminalLines((prev) => [...prev, "[SYSTEM] Waiting for Motion..."]);
       setBootStep(2);
 
-      // 3. Motion Detected
+      // Wait for cursor movement
       if (!isMounted) return;
-      await new Promise((resolve) => {
-        const id = setTimeout(resolve, 1500);
-        timeoutIds.push(id);
+      await new Promise<void>((resolve) => {
+        motionResolverRef.current = resolve;
       });
+
+      // 3. Motion Detected
       if (!isMounted) return;
       setTerminalLines((prev) => [...prev, "", ">>> MOTION DETECTED", ""]);
       setBootStep(3);
 
-      // 4. Print Pseudocode
+      await new Promise((resolve) => {
+        const id = setTimeout(resolve, 300);
+        timeoutIds.push(id);
+      });
       if (!isMounted) return;
+
+      // 4. Print Pseudocode
       const code = courseId === "bca" ? BCA_PSEUDOCODE : MCA_PSEUDOCODE;
       const lines = code.split("\n");
       setBootStep(4);
@@ -188,8 +204,8 @@ export default function SecurityTerminalEntry({
         const lineText = lines[i];
         
         const delay = lineText.trim().startsWith(">") || lineText.trim().startsWith("-") 
-          ? 350 
-          : 80 + Math.random() * 50;
+          ? 80 
+          : 10 + Math.random() * 10;
 
         await new Promise((resolve) => {
           const id = setTimeout(resolve, delay);
@@ -203,7 +219,7 @@ export default function SecurityTerminalEntry({
       // 5. Complete
       if (!isMounted) return;
       await new Promise((resolve) => {
-        const id = setTimeout(resolve, 500);
+        const id = setTimeout(resolve, 150);
         timeoutIds.push(id);
       });
       if (!isMounted) return;
@@ -216,6 +232,7 @@ export default function SecurityTerminalEntry({
     return () => {
       isMounted = false;
       timeoutIds.forEach((id) => clearTimeout(id));
+      motionResolverRef.current = null;
     };
   }, [isVisible, courseId]);
 
@@ -253,6 +270,7 @@ export default function SecurityTerminalEntry({
   return (
     <section
       ref={containerRef}
+      onMouseMove={handleMouseMove}
       className="py-20 bg-slate-955 border-t border-slate-900 text-white relative overflow-hidden min-h-[650px] flex items-center"
     >
       {/* Decorative Sci-Fi Grid overlay */}

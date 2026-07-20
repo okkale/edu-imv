@@ -11,7 +11,7 @@ interface ImageCropperProps {
 }
 
 export function ImageCropper({ open, onOpenChange, imageSrc, onCropComplete }: ImageCropperProps) {
-  const [crop, setCrop] = useState({ x: 25, y: 10, width: 50, height: 75 });
+  const [crop, setCrop] = useState({ x: 25, y: 15, width: 50, height: 50 });
   const [zoom, setZoom] = useState(1);
   const imageRef = useRef<HTMLImageElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -22,7 +22,7 @@ export function ImageCropper({ open, onOpenChange, imageSrc, onCropComplete }: I
   useEffect(() => {
     if (open) {
       setZoom(1);
-      setCrop({ x: 25, y: 10, width: 50, height: 75 });
+      setCrop({ x: 25, y: 15, width: 50, height: 50 });
     }
   }, [open]);
 
@@ -64,8 +64,8 @@ export function ImageCropper({ open, onOpenChange, imageSrc, onCropComplete }: I
     const img = imageRef.current;
     const canvas = document.createElement("canvas");
     
-    const targetWidth = 480;
-    const targetHeight = 600;
+    const targetWidth = 500;
+    const targetHeight = 500;
     canvas.width = targetWidth;
     canvas.height = targetHeight;
     const ctx = canvas.getContext("2d");
@@ -147,7 +147,7 @@ export function ImageCropper({ open, onOpenChange, imageSrc, onCropComplete }: I
                 left: `${crop.x}%`,
                 top: `${crop.y}%`,
                 width: `${crop.width}%`,
-                height: `${crop.height}%`,
+                aspectRatio: "1 / 1",
               }}
             >
               {/* 3x3 Grid Overlay Lines (Rule of Thirds) */}

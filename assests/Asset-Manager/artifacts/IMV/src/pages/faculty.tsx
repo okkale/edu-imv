@@ -130,9 +130,9 @@ export default function Faculty() {
                       >
                         <div>
                           <div className="bg-gradient-to-b from-primary/10 to-transparent pt-8 pb-4 flex flex-col items-center">
-                            <div className="w-28 h-28 rounded-full overflow-hidden border-4 border-white shadow-sm mb-4 bg-muted shrink-0 transition-transform duration-500 hover:scale-105">
+                            <div className="w-28 h-28 aspect-square rounded-full overflow-hidden border-4 border-white shadow-sm mb-4 bg-muted shrink-0 transition-transform duration-500 hover:scale-105 flex items-center justify-center">
                               {faculty.photoUrl ? (
-                                <img src={faculty.photoUrl} alt={faculty.name} className="w-full h-full object-cover" />
+                                <img src={faculty.photoUrl} alt={faculty.name} className="w-full h-full aspect-square object-cover object-center" />
                               ) : (
                                 <div className="w-full h-full flex items-center justify-center bg-secondary text-white text-3xl font-bold">
                                   {faculty.name.charAt(0)}
@@ -214,9 +214,9 @@ export default function Faculty() {
             <div>
               {/* Profile Hero Header */}
               <div className="bg-gradient-to-r from-primary to-primary-dark text-white p-6 md:p-8 flex flex-col md:flex-row items-center gap-6 relative">
-                <div className="w-28 h-28 md:w-32 md:h-32 rounded-full overflow-hidden border-4 border-white/20 bg-white/10 shrink-0">
+                <div className="w-28 h-28 md:w-32 md:h-32 aspect-square rounded-full overflow-hidden border-4 border-white/20 bg-white/10 shrink-0 flex items-center justify-center">
                   {selectedMember.photoUrl ? (
-                    <img src={selectedMember.photoUrl} alt={selectedMember.name} className="w-full h-full object-cover" />
+                    <img src={selectedMember.photoUrl} alt={selectedMember.name} className="w-full h-full aspect-square object-cover object-center" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center bg-accent text-white text-4xl font-bold">
                       {selectedMember.name.charAt(0)}

@@ -15,8 +15,7 @@ import {
   Users, 
   Phone, 
   Info,
-  ChevronRight,
-  Search
+  ChevronRight
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -33,7 +32,6 @@ const DEPARTMENTS = [
 export default function Faculty() {
   const [selectedDept, setSelectedDept] = useState<string>("All");
   const [selectedMember, setSelectedMember] = useState<any | null>(null);
-  const [searchQuery, setSearchQuery] = useState<string>("");
   
   const { data: facultyMembersData, isLoading } = useGetFaculty();
   
@@ -52,60 +50,39 @@ export default function Faculty() {
   });
   
   // Sort faculty: HODs first
-  const sortedFaculty = deptFilteredFaculty.length > 0 ? [...deptFilteredFaculty].sort((a, b) => {
+  const filteredFaculty = deptFilteredFaculty.length > 0 ? [...deptFilteredFaculty].sort((a, b) => {
     if (a.isHOD && !b.isHOD) return -1;
     if (!a.isHOD && b.isHOD) return 1;
     return 0;
   }) : [];
 
-  const filteredFaculty = sortedFaculty.filter((f) => {
-    const q = searchQuery.toLowerCase();
-    if (!q) return true;
-    return (
-      f.name.toLowerCase().includes(q) ||
-      f.designation.toLowerCase().includes(q) ||
-      (f.skills && f.skills.toLowerCase().includes(q)) ||
-      (f.qualification && f.qualification.toLowerCase().includes(q)) ||
-      f.department.toLowerCase().includes(q)
-    );
-  });
-
   return (
     <AppLayout>
-      <section className="bg-primary text-white py-16">
-        <div className="container mx-auto px-4">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">Our Faculty</h1>
-          <p className="text-lg text-primary-foreground/80 max-w-2xl">
-            Learn from distinguished professors, department coordinators, and dedicated educators committed to your success.
-          </p>
-        </div>
-      </section>
-
-      <section className="py-8 bg-background border-b border-border sticky top-[64px] md:top-[80px] z-40 shadow-sm">
-        <div className="container mx-auto px-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="overflow-x-auto pb-2 md:pb-0 -mb-2 md:mb-0">
-            <div className="flex gap-2 min-w-max">
-              {DEPARTMENTS.map((dept) => (
-                <Button
-                  key={dept}
-                  variant={selectedDept === dept ? "default" : "outline"}
-                  onClick={() => setSelectedDept(dept)}
-                  className={selectedDept === dept ? "bg-accent hover:bg-accent/90" : ""}
-                >
-                  {dept}
-                </Button>
-              ))}
-            </div>
+      <section className="bg-primary text-white pt-12 pb-8">
+        <div className="container mx-auto px-4 space-y-8">
+          <div>
+            <h1 className="text-4xl md:text-5xl font-bold mb-3">Our Faculty</h1>
+            <p className="text-base md:text-lg text-primary-foreground/80 max-w-2xl">
+              Learn from distinguished professors, department coordinators, and dedicated educators committed to your success.
+            </p>
           </div>
-          <div className="relative max-w-xs w-full shrink-0">
-            <Search className="absolute left-3 top-2.5 h-4.5 w-4.5 text-muted-foreground" />
-            <input
-              type="text"
-              placeholder="Search by name, role or skill..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 pr-4 h-9.5 w-full rounded-lg border border-border bg-muted/30 text-xs focus:bg-background focus:outline-none focus:ring-1 focus:ring-accent transition-all placeholder:text-muted-foreground"
-            />
+
+          {/* Attached Department Navigation Filters */}
+          <div className="grid grid-cols-5 gap-2 md:gap-4 w-full">
+            {DEPARTMENTS.map((dept) => (
+              <Button
+                key={dept}
+                variant={selectedDept === dept ? "default" : "outline"}
+                onClick={() => setSelectedDept(dept)}
+                className={`w-full py-2.5 text-xs md:text-sm font-semibold transition-all rounded-xl cursor-pointer ${
+                  selectedDept === dept 
+                    ? "bg-accent hover:bg-accent/90 text-white shadow-md border-accent" 
+                    : "bg-white/10 hover:bg-white/20 text-white border-white/20"
+                }`}
+              >
+                {dept}
+              </Button>
+            ))}
           </div>
         </div>
       </section>

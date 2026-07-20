@@ -124,6 +124,9 @@ export default function Courses() {
                     <td className="p-4 text-sm md:text-base text-muted-foreground font-mono tracking-tight">
                       {prog.coursecode}
                     </td>
+                    <td className="p-4 text-sm md:text-base text-muted-foreground font-mono tracking-tight">
+                      {prog.tfwscode}
+                    </td>
                   </tr>
                 ))}
               </tbody>

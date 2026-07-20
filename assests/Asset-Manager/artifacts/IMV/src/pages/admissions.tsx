@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { AppLayout } from "@/components/layout/AppLayout";
+import { AdmissionFlowchart } from "@/components/AdmissionFlowchart";
 import { useCreateAdmissionLead } from "@workspace/api-client-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -330,60 +331,7 @@ export default function Admissions() {
                     </p>
                   </div>
 
-                  <Card className="border-border shadow-sm">
-                    <CardContent className="p-6">
-                      <h3 className="text-base font-bold text-primary mb-6">Step-by-Step Process</h3>
-                      <div className="relative border-l-2 border-muted pl-6 space-y-8 ml-3">
-                        {[
-                          {
-                            title: "Online Registration",
-                            desc: "Candidates must register on the State CET Cell website: https://cetcell.mahacet.org. Fill out the application form and upload required documents.",
-                            link: "https://cetcell.mahacet.org"
-                          },
-                          {
-                            title: "Document Verification & Confirmation",
-                            desc: "Document Verification & Confirmation of Application Form can be done through Facilitation Centers (FCs) designated by CET Cell."
-                          },
-                          {
-                            title: "Provisional Merit List",
-                            desc: "Released based on CET/JEE scores and academic credentials."
-                          },
-                          {
-                            title: "Option Form Filling & CAP Rounds",
-                            desc: "Candidates must fill the Option Form for institute and branch preferences during CAP Rounds I, II, III and IV."
-                          },
-                          {
-                            title: "Seat Allotment",
-                            desc: "Seats are allotted based on merit, reservation, and preferences filled."
-                          },
-                          {
-                            title: "Admission Confirmation",
-                            desc: "Visit the Admission Reporting Centre (ARC) and later report to Indrayani Mahavidyalaya for final admission confirmation."
-                          }
-                        ].map((step, idx) => (
-                          <div key={idx} className="relative">
-                            <span className="absolute -left-[35px] top-0 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-white text-xs font-bold ring-4 ring-background">
-                              {idx + 1}
-                            </span>
-                            <div className="space-y-1">
-                              <h4 className="text-sm font-bold text-primary">{step.title}</h4>
-                              <p className="text-sm text-muted-foreground leading-relaxed">{step.desc}</p>
-                              {step.link && (
-                                <a 
-                                  href={step.link} 
-                                  target="_blank" 
-                                  rel="noopener noreferrer"
-                                  className="inline-flex items-center gap-1 text-xs text-accent hover:underline font-medium mt-1"
-                                >
-                                  Visit CET Cell Website <ExternalLink className="h-3 w-3" />
-                                </a>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
+                  <AdmissionFlowchart />
                 </TabsContent>
 
                 {/* ── Admission at Institute Level Content ── */}

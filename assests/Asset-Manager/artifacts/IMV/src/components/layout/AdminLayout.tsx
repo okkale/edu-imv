@@ -14,6 +14,12 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
     });
   };
 
+  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    e.preventDefault();
+    window.history.pushState({}, "", href);
+    window.dispatchEvent(new Event("popstate"));
+  };
+
   const navItems = [
     { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { href: "/admin/dashboard?tab=courses", label: "Courses", icon: GraduationCap },
@@ -24,6 +30,8 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
     { href: "/admin/dashboard?tab=media", label: "Media", icon: Image },
   ];
 
+  const currentTab = new URLSearchParams(window.location.search).get("tab") || "overview";
+
   return (
     <div className="min-h-[100dvh] flex flex-col md:flex-row bg-muted/30">
       {/* Sidebar */}
@@ -33,17 +41,17 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
         </div>
         <nav className="flex-1 py-6 px-4 space-y-1">
           {navItems.map((item) => {
-            const isActive = location === item.href || (location === "/admin/dashboard" && item.href === "/admin/dashboard" && !window.location.search);
-            const searchMatches = window.location.search.includes(item.href.split('?')[1] || 'no-match');
-            const reallyActive = isActive || searchMatches;
+            const itemTab = item.href.includes("tab=") ? item.href.split("tab=")[1] : "overview";
+            const reallyActive = currentTab === itemTab;
 
             return (
               <a
                 key={item.href}
                 href={item.href}
-                className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
+                onClick={(e) => handleNavClick(e, item.href)}
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
                   reallyActive 
-                    ? "bg-sidebar-accent text-sidebar-accent-foreground" 
+                    ? "bg-sidebar-accent text-sidebar-accent-foreground font-semibold" 
                     : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-white"
                 }`}
               >

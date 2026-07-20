@@ -19,10 +19,9 @@ export default function AdminDashboard() {
   const { data: admin, isLoading: adminLoading, isError } = useGetAdminMe();
   const { data: stats, isLoading: statsLoading } = useGetDashboardStats();
   
-  const searchParams = new URLSearchParams(window.location.search);
-  const tabParam = searchParams.get('tab') || 'overview';
-  
-  const [activeTab, setActiveTab] = useState(tabParam);
+  const [activeTab, setActiveTab] = useState(() => {
+    return new URLSearchParams(window.location.search).get("tab") || "overview";
+  });
 
   useEffect(() => {
     if (isError) {
@@ -31,13 +30,23 @@ export default function AdminDashboard() {
   }, [isError, setLocation]);
 
   useEffect(() => {
-    setActiveTab(tabParam);
-  }, [tabParam]);
+    const syncTabFromUrl = () => {
+      const tab = new URLSearchParams(window.location.search).get("tab") || "overview";
+      setActiveTab(tab);
+    };
+
+    window.addEventListener("popstate", syncTabFromUrl);
+    syncTabFromUrl();
+
+    return () => {
+      window.removeEventListener("popstate", syncTabFromUrl);
+    };
+  }, []);
 
   const handleTabChange = (val: string) => {
     setActiveTab(val);
-    const newUrl = val === 'overview' ? '/admin/dashboard' : `/admin/dashboard?tab=${val}`;
-    window.history.pushState({}, '', newUrl);
+    const newUrl = val === "overview" ? "/admin/dashboard" : `/admin/dashboard?tab=${val}`;
+    window.history.pushState({}, "", newUrl);
   };
 
   if (adminLoading) {

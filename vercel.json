@@ -9,7 +9,7 @@
       "destination": "https://edu-imv.onrender.com/api/uploads/:path*"
     },
     {
-      "source": "/:path*",
+      "source": "/((?!api|uploads|_next|static|assets).*)",
       "destination": "/index.html"
     }
   ]

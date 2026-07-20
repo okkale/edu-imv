@@ -8,7 +8,7 @@ export function Footer() {
     <footer className="bg-primary text-primary-foreground">
       <div className="container mx-auto px-4 py-6 md:py-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
-          
+
           {/* About */}
           <div className="space-y-3">
             <h3 className="text-2xl font-bold tracking-tight mb-4">Indrayani Mahavidyalaya</h3>
@@ -81,7 +81,7 @@ export function Footer() {
               </li>
               <li className="flex items-center gap-3 text-sm text-primary-foreground/80">
                 <Phone className="h-5 w-5 text-accent shrink-0" />
-                <span>+91 94223 50872 / +91 94223 50872</span>
+                <span>+91 94223 50872 </span>
               </li>
               <li className="flex items-center gap-3 text-sm text-primary-foreground/80">
                 <Mail className="h-5 w-5 text-accent shrink-0" />
@@ -92,7 +92,7 @@ export function Footer() {
 
         </div>
       </div>
-      
+
       <div className="bg-primary/95 border-t border-primary-foreground/10 py-3">
         <div className="container mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-primary-foreground/60">
           <p>&copy; {currentYear} Indrayani Mahavidyalaya. All rights reserved.</p>

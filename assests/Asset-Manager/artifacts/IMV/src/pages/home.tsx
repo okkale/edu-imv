@@ -191,7 +191,7 @@ export default function Home() {
             </div>
             <h2 className="text-3xl md:text-4xl font-bold text-primary mb-4">Messages from our Leadership</h2>
             <p className="text-lg text-muted-foreground">
-              Hear from the leaders guiding our vision and commitment to engineering innovation.
+              Hear from the leaders guiding our vision and commitment to excellence.
             </p>
           </div>
 
@@ -225,7 +225,7 @@ export default function Home() {
                     role: "President",
                     organization: "Indrayani Vidya Mandir",
                     image: "/president.jpg",
-                    message: `"Indrayani Vidya Mandir has a distinctive mission and history that has made it the leader in the field of education in Maval area. Today’s Education not only focuses on imparting knowledge and skills but also on the overall development of the students. The Indrayani Institute of Yashoda Mahadeo Kakade College of Engineering is geared up to provide you with the experienced faculty, facilities and infrastructure to prepare you for the tough challenges ahead. We are providing our students an opportunity for personal development and bringing about social reforms in this very vital sector. We believe that the students leaving this campus should leave with confidence in their abilities, a sense of responsibility towards society and be fully equipped to face the challenges of life with dignity."`
+                    message: `"Indrayani Vidya Mandir has a distinctive mission and history that has made it the leader in the field of education in Maval area. Today’s Education not only focuses on imparting knowledge and skills but also on the overall development of the students. The Indrayani Institute of Indrayani Mahavidyalaya is geared up to provide you with the experienced faculty, facilities and infrastructure to prepare you for the tough challenges ahead. We are providing our students an opportunity for personal development and bringing about social reforms in this very vital sector. We believe that the students leaving this campus should leave with confidence in their abilities, a sense of responsibility towards society and be fully equipped to face the challenges of life with dignity."`
                   })}
                   className="text-accent hover:text-accent/80 font-bold p-0 self-start mt-2 h-auto"
                 >
@@ -384,7 +384,7 @@ Indrayani Vidya Mandir.`
             <div className="flex justify-between items-end mb-8">
               <div>
                 <h2 className="text-3xl font-bold text-primary mb-2">Featured Programs</h2>
-                <p className="text-muted-foreground">Discover our most sought-after engineering degrees.</p>
+                <p className="text-muted-foreground">Discover our most sought-after degrees.</p>
               </div>
               <Link href="/courses">
                 <Button variant="ghost" className="hidden sm:flex group">

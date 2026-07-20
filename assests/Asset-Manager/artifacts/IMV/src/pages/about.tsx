@@ -10,7 +10,7 @@ export default function About() {
         <div className="container mx-auto px-4 text-center">
           <h1 className="text-4xl md:text-5xl font-bold mb-4">About Indrayani Mahavidyalaya</h1>
           <p className="text-lg text-primary-foreground/80 max-w-2xl mx-auto">
-            Nurturing engineering excellence, fostering innovation, and building the leaders of tomorrow since 1965.
+            Nurturing excellence, fostering innovation, and building the leaders of tomorrow since 1965.
           </p>
         </div>
       </section>

@@ -182,24 +182,24 @@ export function MediaManager() {
           ))
         ) : media.length > 0 ? (
           media.map((item) => (
-            <div key={item.id} className="group relative aspect-square rounded-lg overflow-hidden bg-muted border border-border">
+            <div key={item.id} className="group relative rounded-xl overflow-hidden bg-slate-900 border border-border flex items-center justify-center p-1.5 min-h-[160px]">
               {item.type === 'video' && !item.thumbnailUrl ? (
-                <div className="absolute inset-0 flex items-center justify-center text-muted-foreground bg-secondary/10">
+                <div className="h-32 w-full flex items-center justify-center text-muted-foreground bg-secondary/10">
                   <PlayCircle className="h-10 w-10 opacity-50" />
                 </div>
               ) : (
                 <img 
                   src={item.thumbnailUrl || item.url} 
                   alt={item.title} 
-                  className="w-full h-full object-cover" 
+                  className="w-full h-auto max-h-[180px] object-contain rounded-lg" 
                 />
               )}
               
-              <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-3">
+              <div className="absolute inset-0 bg-black/75 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-3 rounded-xl">
                 <div className="flex justify-between items-start">
-                  <Badge variant="secondary" className="text-[10px] uppercase">{item.category}</Badge>
+                  <Badge variant="secondary" className="text-[10px] uppercase bg-accent text-white border-none">{item.category}</Badge>
                   <Button variant="destructive" size="icon" className="h-7 w-7 rounded-full" onClick={() => handleDelete(item.id)}>
-                    <Trash2 className="h-3 w-3" />
+                    <Trash2 className="h-3.5 w-3.5" />
                   </Button>
                 </div>
                 <div className="text-white">

@@ -24,10 +24,10 @@ export default function AdminDashboard() {
   });
 
   useEffect(() => {
-    if (isError) {
+    if (isError || (!adminLoading && !admin)) {
       setLocation("/admin");
     }
-  }, [isError, setLocation]);
+  }, [isError, admin, adminLoading, setLocation]);
 
   useEffect(() => {
     const syncTabFromUrl = () => {

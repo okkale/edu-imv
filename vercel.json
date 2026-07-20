@@ -1,18 +1,16 @@
 {
-  "cleanUrls": true,
-  "routes": [
+  "rewrites": [
     {
-      "src": "/api/(.*)",
-      "dest": "https://edu-imv.onrender.com/api/$1"
+      "source": "/api/:path*",
+      "destination": "https://edu-imv.onrender.com/api/:path*"
     },
     {
-      "src": "/assets/(.*)",
-      "headers": { "cache-control": "public, max-age=31536000, immutable" },
-      "continue": true
+      "source": "/uploads/:path*",
+      "destination": "https://edu-imv.onrender.com/api/uploads/:path*"
     },
     {
-      "src": "/(.*)",
-      "dest": "/index.html"
+      "source": "/:path*",
+      "destination": "/index.html"
     }
   ]
 }

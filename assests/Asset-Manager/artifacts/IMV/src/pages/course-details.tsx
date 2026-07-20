@@ -246,7 +246,7 @@ const COURSE_DATA: Record<string, CourseInfo> = {
     name: "Bachelor of Business Administration (BBA)",
     shortName: "BBA",
     duration: "3 Years",
-    intake: 180,
+    intake: 120,
     dteCode: "16173",
     dbDeptName: "Management Studies",
     summary: "The BBA program focuses on business administration fundamentals, financial management, retail, human resource operations, market logistics, and strategic entrepreneurship. Designed under SPPU guidelines, it fosters critical thinking, business modeling, and communications.",
@@ -1221,7 +1221,7 @@ export default function CourseDetails({ params }: { params?: { id: string } }) {
 
                   {/* Responsive Graph Tree */}
                   <div className="relative">
-                    
+
                     {/* Desktop layout with absolute positioning for perfect alignment */}
                     <div className="hidden lg:block relative w-[1140px] mx-auto h-[460px] overflow-visible select-none">
                       {/* Desktop SVG Connecting Lines */}

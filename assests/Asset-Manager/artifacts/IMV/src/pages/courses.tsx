@@ -21,7 +21,7 @@ const ACADEMIC_PROGRAMS = [
     id: "bba",
     program: "B.B.A.",
     name: "Bachelor of Business Administration",
-    intake: "180",
+    intake: "120",
     coursecode: "1617310170U",
     tfwscode: "1617310171UT",
     icon: Briefcase,

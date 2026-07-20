@@ -70,7 +70,7 @@ export default function Contact() {
       <section className="py-20 bg-background">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-            
+
             {/* Contact Information */}
             <div className="lg:col-span-4 space-y-8">
               <div>
@@ -89,7 +89,7 @@ export default function Contact() {
                       </p>
                     </div>
                   </div>
-                  
+
                   <div className="flex gap-4">
                     <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center shrink-0">
                       <Phone className="h-6 w-6 text-accent" />
@@ -97,7 +97,7 @@ export default function Contact() {
                     <div>
                       <h3 className="font-semibold text-foreground text-lg mb-1">Phone Number</h3>
                       <p className="text-muted-foreground">
-                        <a href="tel:+91 94223 50872" className="hover:text-primary transition-colors">+91 94223 50872</a><br/>
+                        <a href="tel:+91 94223 50872" className="hover:text-primary transition-colors">+91 94223 50872</a><br />
                         <a href="tel:+91 94223 50872" className="hover:text-primary transition-colors">+91 94223 50872</a> (Admissions)
                       </p>
                     </div>
@@ -203,8 +203,8 @@ export default function Contact() {
                         )}
                       />
 
-                      <Button 
-                        type="submit" 
+                      <Button
+                        type="submit"
                         className="bg-primary hover:bg-primary/90 text-white h-12 px-8 text-lg"
                         disabled={submitContact.isPending}
                       >
@@ -220,15 +220,19 @@ export default function Contact() {
         </div>
       </section>
 
-      {/* Map Placeholder */}
-      <section className="h-[400px] w-full bg-muted border-t border-border relative">
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="text-center text-muted-foreground p-6 bg-white/80 backdrop-blur-sm rounded-lg border border-border shadow-sm">
-            <MapPin className="h-10 w-10 mx-auto mb-2 opacity-50" />
-            <h3 className="font-semibold text-lg text-foreground">Interactive Map Integration</h3>
-            <p className="text-sm">Google Maps embed will be placed here.</p>
-          </div>
-        </div>
+      {/* Interactive Google Map Section */}
+      <section className="h-[450px] w-full border-t border-border relative bg-slate-100">
+        <iframe
+          src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3778.4180059191485!2d73.68306919999999!3d18.734856800000003!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3bc2b1d9763bc2c3%3A0x7a82f99a65a0dbca!2sIndrayani%20Vidya%20Mandir&#39;s%20Indrayani%20Mahavidyalaya!5e0!3m2!1sen!2sin!4v1784533540647!5m2!1sen!2sin"
+          width="100%"
+          height="100%"
+          style={{ border: 0 }}
+          allowFullScreen={true}
+          loading="lazy"
+          referrerPolicy="no-referrer-when-downgrade"
+          className="w-full h-full"
+          title="Indrayani Mahavidyalaya Google Map"
+        />
       </section>
     </AppLayout>
   );

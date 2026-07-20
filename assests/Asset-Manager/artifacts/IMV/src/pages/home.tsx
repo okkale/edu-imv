@@ -2,7 +2,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Link } from "wouter";
-import { ArrowRight, GraduationCap, Users, Building, Trophy, Calendar, CheckCircle2, MessageSquare, Quote, Landmark, History } from "lucide-react";
+import { ArrowRight, GraduationCap, Users, Building, Trophy, Calendar, CheckCircle2, MessageSquare, Quote, Landmark, History, MapPin, ExternalLink } from "lucide-react";
 import { useGetCourses, useGetNews, useGetDashboardStats } from "@workspace/api-client-react";
 import { useState } from "react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -468,6 +468,39 @@ Indrayani Vidya Mandir.`
                   All News & Events <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
                 </Button>
               </Link>
+
+              {/* Interactive Campus Location Map */}
+              <div className="pt-6 border-t border-border space-y-3">
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-5 w-5 text-accent" />
+                  <h3 className="text-xl font-bold text-primary">Campus Location</h3>
+                </div>
+                <Card className="overflow-hidden border border-border shadow-sm hover:shadow-md transition-shadow">
+                  <div className="h-60 w-full relative">
+                    <iframe
+                      src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3778.4180059191485!2d73.68306919999999!3d18.734856800000003!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3bc2b1d9763bc2c3%3A0x7a82f99a65a0dbca!2sIndrayani%20Vidya%20Mandir&#39;s%20Indrayani%20Mahavidyalaya!5e0!3m2!1sen!2sin!4v1784533540647!5m2!1sen!2sin"
+                      width="100%"
+                      height="100%"
+                      style={{ border: 0 }}
+                      allowFullScreen={true}
+                      loading="lazy"
+                      referrerPolicy="no-referrer-when-downgrade"
+                      title="Indrayani Mahavidyalaya Location Map"
+                    />
+                  </div>
+                  <CardContent className="p-3.5 bg-white text-xs text-muted-foreground flex items-center justify-between">
+                    <span className="truncate font-medium">Talegaon Dabhade, Pune 410507</span>
+                    <a
+                      href="https://maps.google.com/?q=Indrayani+Mahavidyalaya+Talegaon"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-accent hover:underline font-semibold shrink-0 flex items-center gap-1"
+                    >
+                      Open Map <ExternalLink className="w-3 h-3" />
+                    </a>
+                  </CardContent>
+                </Card>
+              </div>
             </div>
           </div>
 

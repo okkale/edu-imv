@@ -9,6 +9,7 @@ import placementsRouter from "./placements";
 import contactRouter from "./contact";
 import adminRouter from "./admin";
 import statsRouter from "./stats";
+import uploadRouter from "./upload";
 
 const router: IRouter = Router();
 
@@ -22,5 +23,6 @@ router.use(placementsRouter);
 router.use(contactRouter);
 router.use(adminRouter);
 router.use(statsRouter);
+router.use(uploadRouter);
 
 export default router;

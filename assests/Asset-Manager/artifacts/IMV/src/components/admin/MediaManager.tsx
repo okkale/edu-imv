@@ -50,8 +50,8 @@ export function MediaManager() {
       return;
     }
 
-    if (selectedFile.size > 5 * 1024 * 1024) {
-      toast({ variant: "destructive", title: "File size exceeds 5MB limit" });
+    if (selectedFile.size > 20 * 1024 * 1024) {
+      toast({ variant: "destructive", title: "File size exceeds 20MB limit" });
       return;
     }
 
